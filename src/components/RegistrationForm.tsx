@@ -13,6 +13,10 @@ interface FormData {
     relationship: string;
     visitDate: string;
     roomBlock: string;
+    pengikutLaki: number;
+    pengikutPerempuan: number;
+    pengikutAnak: number;
+    jumlahPengikut: number;
 }
 
 export default function RegistrationForm() {
@@ -30,6 +34,10 @@ export default function RegistrationForm() {
         relationship: '',
         visitDate: '',
         roomBlock: '',
+        pengikutLaki: 0,
+        pengikutPerempuan: 0,
+        pengikutAnak: 0,
+        jumlahPengikut: 0,
     });
     const [wbpSuggestions, setWbpSuggestions] = useState<any[]>([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
@@ -130,6 +138,10 @@ export default function RegistrationForm() {
                 relationship: formData.relationship,
                 visitDate: formData.visitDate,
                 roomBlock: formData.roomBlock,
+                pengikutLaki: formData.pengikutLaki,
+                pengikutPerempuan: formData.pengikutPerempuan,
+                pengikutAnak: formData.pengikutAnak,
+                jumlahPengikut: formData.jumlahPengikut,
             });
 
             setRegNumber(registration.id);
@@ -149,6 +161,10 @@ export default function RegistrationForm() {
                     relationship: '',
                     visitDate: '',
                     roomBlock: '',
+                    pengikutLaki: 0,
+                    pengikutPerempuan: 0,
+                    pengikutAnak: 0,
+                    jumlahPengikut: 0,
                 });
             }, 5000);
         } catch (error) {
@@ -169,6 +185,10 @@ export default function RegistrationForm() {
             relationship: '',
             visitDate: '',
             roomBlock: '',
+            pengikutLaki: 0,
+            pengikutPerempuan: 0,
+            pengikutAnak: 0,
+            jumlahPengikut: 0,
         });
     };
 
@@ -391,6 +411,91 @@ export default function RegistrationForm() {
                                 className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 placeholder="Alamat sesuai KTP"
                             />
+                        </div>
+                    </div>
+
+                    <div className="border-t border-border pt-6">
+                        <h3 className="text-gray-900 mb-4 flex items-center gap-2">
+                            <UserPlus className="w-5 h-5 text-blue-600" />
+                            Data Pengikut (Jika ada)
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <div>
+                                <label htmlFor="pengikutLaki" className="text-gray-700 block mb-2 text-sm">
+                                    Laki-laki
+                                </label>
+                                <input
+                                    type="number"
+                                    id="pengikutLaki"
+                                    name="pengikutLaki"
+                                    min="0"
+                                    value={formData.pengikutLaki}
+                                    onChange={(e) => {
+                                        const val = parseInt(e.target.value) || 0;
+                                        setFormData(prev => ({
+                                            ...prev,
+                                            pengikutLaki: val,
+                                            jumlahPengikut: val + prev.pengikutPerempuan + prev.pengikutAnak
+                                        }));
+                                    }}
+                                    className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                />
+                            </div>
+                            <div>
+                                <label htmlFor="pengikutPerempuan" className="text-gray-700 block mb-2 text-sm">
+                                    Perempuan
+                                </label>
+                                <input
+                                    type="number"
+                                    id="pengikutPerempuan"
+                                    name="pengikutPerempuan"
+                                    min="0"
+                                    value={formData.pengikutPerempuan}
+                                    onChange={(e) => {
+                                        const val = parseInt(e.target.value) || 0;
+                                        setFormData(prev => ({
+                                            ...prev,
+                                            pengikutPerempuan: val,
+                                            jumlahPengikut: prev.pengikutLaki + val + prev.pengikutAnak
+                                        }));
+                                    }}
+                                    className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                />
+                            </div>
+                            <div>
+                                <label htmlFor="pengikutAnak" className="text-gray-700 block mb-2 text-sm">
+                                    Anak-anak
+                                </label>
+                                <input
+                                    type="number"
+                                    id="pengikutAnak"
+                                    name="pengikutAnak"
+                                    min="0"
+                                    value={formData.pengikutAnak}
+                                    onChange={(e) => {
+                                        const val = parseInt(e.target.value) || 0;
+                                        setFormData(prev => ({
+                                            ...prev,
+                                            pengikutAnak: val,
+                                            jumlahPengikut: prev.pengikutLaki + prev.pengikutPerempuan + val
+                                        }));
+                                    }}
+                                    className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                />
+                            </div>
+                            <div>
+                                <label htmlFor="jumlahPengikut" className="text-gray-700 block mb-2 text-sm">
+                                    Total Pengikut
+                                </label>
+                                <input
+                                    type="number"
+                                    id="jumlahPengikut"
+                                    name="jumlahPengikut"
+                                    value={formData.jumlahPengikut}
+                                    readOnly
+                                    className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg font-bold text-blue-700"
+                                />
+                            </div>
                         </div>
                     </div>
 

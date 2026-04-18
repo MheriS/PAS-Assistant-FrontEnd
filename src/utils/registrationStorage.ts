@@ -17,6 +17,10 @@ export interface RegistrationRecord {
     roomBlock?: string;
     status: 'pending' | 'approved' | 'rejected';
     createdAt: string;
+    pengikutLaki?: number;
+    pengikutPerempuan?: number;
+    pengikutAnak?: number;
+    jumlahPengikut?: number;
 }
 
 // Mendapatkan semua data pendaftaran (admin)
@@ -38,6 +42,10 @@ export async function getAllRegistrations(): Promise<RegistrationRecord[]> {
             roomBlock: item.room_block,
             status: item.status,
             createdAt: item.created_at,
+            pengikutLaki: item.pengikut_laki,
+            pengikutPerempuan: item.pengikut_perempuan,
+            pengikutAnak: item.pengikut_anak,
+            jumlahPengikut: item.jumlah_pengikut,
         }));
     } catch (error) {
         console.error('Error reading registration data:', error);
@@ -72,6 +80,10 @@ export async function saveRegistration(record: Omit<RegistrationRecord, 'id' | '
             roomBlock: item.room_block,
             status: item.status,
             createdAt: item.created_at,
+            pengikutLaki: item.pengikut_laki,
+            pengikutPerempuan: item.pengikut_perempuan,
+            pengikutAnak: item.pengikut_anak,
+            jumlahPengikut: item.jumlah_pengikut,
         };
     } catch (error) {
         console.error('Error saving registration:', error);
@@ -111,6 +123,10 @@ export async function getRegistrationsByNIK(nik: string): Promise<RegistrationRe
             roomBlock: item.room_block,
             status: item.status,
             createdAt: item.created_at,
+            pengikutLaki: item.pengikut_laki,
+            pengikutPerempuan: item.pengikut_perempuan,
+            pengikutAnak: item.pengikut_anak,
+            jumlahPengikut: item.jumlah_pengikut,
         }));
     } catch (error) {
         console.error('Error fetching data by NIK:', error);
