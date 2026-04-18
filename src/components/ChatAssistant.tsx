@@ -8,14 +8,6 @@ interface Message {
     timestamp: Date;
 }
 
-const FAQ_RESPONSES: { [key: string]: string } = {
-    'jadwal': 'Jadwal kunjungan Lapas Narkotika IIA Pamekasan:\n• Senin - Kamis: 09.00 - 14.00 WIB\n• Jumat: 09.00 - 11.00 WIB\n• Sabtu - Minggu: 09.00 - 15.00 WIB',
-    'syarat': 'Syarat kunjungan:\n1. KTP/Identitas asli dan fotokopi\n2. Surat izin dari RT/RW (untuk kunjungan pertama)\n3. Kartu keluarga (khusus keluarga)\n4. Sudah melakukan pendaftaran online\n5. Pakaian sopan dan rapi',
-    'barang': 'Barang yang boleh dibawa:\n• Makanan dalam kemasan (max 2kg)\n• Uang tunai (max Rp 500.000)\n• Pakaian dalam (max 3 pasang)\n• Obat-obatan dengan resep dokter\n\nBarang yang DILARANG:\n• Handphone, rokok, senjata tajam\n• Narkoba dan alkohol\n• Barang elektronik',
-    'daftar': 'Cara pendaftaran:\n1. Akses website atau aplikasi PAS-Assistant\n2. Pilih menu "Daftar Kunjungan"\n3. Isi data pengunjung dan WBP\n4. Pilih tanggal dan waktu kunjungan\n5. Upload dokumen persyaratan\n6. Tunggu konfirmasi via SMS/Email',
-    'durasi': 'Durasi kunjungan maksimal 60 menit per sesi. Jika antrian sedikit, waktu bisa diperpanjang sesuai kebijakan petugas.',
-    'kontak': 'Kontak Lapas Narkotika IIA Pamekasan:\n📞 Telepon: (0324) 322xxx\n📧 Email: lapas.pamekasan@kemenkumham.go.id\n📍 Alamat: Jl. Raya Pamekasan KM 5, Pamekasan, Jawa Timur',
-};
 
 export default function ChatAssistant() {
     const [messages, setMessages] = useState<Message[]>([
@@ -37,29 +29,8 @@ export default function ChatAssistant() {
         scrollToBottom();
     }, [messages]);
 
-    const generateResponse = (userMessage: string): string => {
-        const lowerMessage = userMessage.toLowerCase();
 
-        if (lowerMessage.includes('jadwal') || lowerMessage.includes('jam')) {
-            return FAQ_RESPONSES['jadwal'];
-        } else if (lowerMessage.includes('syarat') || lowerMessage.includes('persyaratan')) {
-            return FAQ_RESPONSES['syarat'];
-        } else if (lowerMessage.includes('barang') || lowerMessage.includes('bawa')) {
-            return FAQ_RESPONSES['barang'];
-        } else if (lowerMessage.includes('daftar') || lowerMessage.includes('pendaftaran')) {
-            return FAQ_RESPONSES['daftar'];
-        } else if (lowerMessage.includes('durasi') || lowerMessage.includes('lama')) {
-            return FAQ_RESPONSES['durasi'];
-        } else if (lowerMessage.includes('kontak') || lowerMessage.includes('telepon') || lowerMessage.includes('alamat')) {
-            return FAQ_RESPONSES['kontak'];
-        } else if (lowerMessage.includes('halo') || lowerMessage.includes('hai') || lowerMessage.includes('hello')) {
-            return 'Halo! Saya PAS-Assistant. Silakan tanyakan tentang:\n• Jadwal kunjungan\n• Syarat dan prosedur\n• Barang bawaan\n• Cara pendaftaran\n• Kontak Lapas';
-        } else {
-            return 'Maaf, saya belum memahami pertanyaan Anda. Silakan tanyakan tentang: jadwal, syarat, barang bawaan, cara pendaftaran, durasi kunjungan, atau kontak Lapas.';
-        }
-    };
-
-    const handleSend = () => {
+    const handleSend = async () => {
         if (!input.trim()) return;
 
         const userMessage: Message = {
@@ -70,18 +41,35 @@ export default function ChatAssistant() {
         };
 
         setMessages((prev) => [...prev, userMessage]);
+        const currentInput = input;
         setInput('');
 
-        setTimeout(() => {
-            const response = generateResponse(input);
+        try {
+            const response = await fetch('http://localhost:8000/api/chatbot', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: currentInput }),
+            });
+
+            const data = await response.json();
+
             const assistantMessage: Message = {
                 id: (Date.now() + 1).toString(),
-                text: response,
+                text: data.response || 'Maaf, saya sedang tidak dapat merespon.',
                 sender: 'assistant',
                 timestamp: new Date(),
             };
             setMessages((prev) => [...prev, assistantMessage]);
-        }, 500);
+        } catch (error) {
+            console.error('Error calling chatbot API:', error);
+            const errorMessage: Message = {
+                id: (Date.now() + 1).toString(),
+                text: 'Maaf, terjadi kesalahan koneksi ke server chatbot.',
+                sender: 'assistant',
+                timestamp: new Date(),
+            };
+            setMessages((prev) => [...prev, errorMessage]);
+        }
     };
 
     const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -123,8 +111,8 @@ export default function ChatAssistant() {
                         </div>
                         <div
                             className={`max-w-[70%] p-3 rounded-lg ${message.sender === 'user'
-                                    ? 'bg-blue-600 text-white'
-                                    : 'bg-gray-100 text-gray-900'
+                                ? 'bg-blue-600 text-white'
+                                : 'bg-gray-100 text-gray-900'
                                 }`}
                         >
                             <p className="whitespace-pre-wrap">{message.text}</p>
