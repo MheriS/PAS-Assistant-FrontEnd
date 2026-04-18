@@ -1,6 +1,8 @@
+import { searchWBP } from '@/utils/registrationStorage';
 import { useState } from 'react';
-import { Calendar, User, IdCard, Phone, Home, FileText, CheckCircle, Search, Scan, UserCheck, UserPlus } from 'lucide-react';
+import { Calendar, User, IdCard, FileText, CheckCircle, Search, Scan, UserCheck, UserPlus } from 'lucide-react';
 import { findVisitorByNIK, saveVisitor, type VisitorData } from '@/utils/visitorStorage';
+import { saveRegistration } from '@/utils/registrationStorage';
 
 interface FormData {
     visitorName: string;
@@ -8,10 +10,9 @@ interface FormData {
     visitorPhone: string;
     visitorAddress: string;
     inmateName: string;
-    inmateNumber: string;
     relationship: string;
     visitDate: string;
-    visitTime: string;
+    roomBlock: string;
 }
 
 export default function RegistrationForm() {
@@ -19,20 +20,22 @@ export default function RegistrationForm() {
     const [nikChecked, setNikChecked] = useState(false);
     const [isReturningVisitor, setIsReturningVisitor] = useState(false);
     const [isSearching, setIsSearching] = useState(false);
+    const [regNumber, setRegNumber] = useState(''); // Store reg number for success screen
     const [formData, setFormData] = useState<FormData>({
         visitorName: '',
         visitorId: '',
         visitorPhone: '',
         visitorAddress: '',
         inmateName: '',
-        inmateNumber: '',
         relationship: '',
         visitDate: '',
-        visitTime: '',
+        roomBlock: '',
     });
+    const [wbpSuggestions, setWbpSuggestions] = useState<any[]>([]);
+    const [showSuggestions, setShowSuggestions] = useState(false);
     const [submitted, setSubmitted] = useState(false);
 
-    const handleNikSearch = () => {
+    const handleNikSearch = async () => {
         if (!nikInput || nikInput.length !== 16) {
             alert('Masukkan NIK dengan benar (16 digit)');
             return;
@@ -41,8 +44,8 @@ export default function RegistrationForm() {
         setIsSearching(true);
 
         // Simulate scanning/searching animation
-        setTimeout(() => {
-            const existingVisitor = findVisitorByNIK(nikInput);
+        try {
+            const existingVisitor = await findVisitorByNIK(nikInput);
 
             if (existingVisitor) {
                 // Auto-fill data for returning visitor
@@ -65,8 +68,11 @@ export default function RegistrationForm() {
             }
 
             setNikChecked(true);
+        } catch (error) {
+            alert('Gagal mencari data pengunjung');
+        } finally {
             setIsSearching(false);
-        }, 800);
+        }
     };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -76,7 +82,30 @@ export default function RegistrationForm() {
         });
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleWbpChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value;
+        setFormData({ ...formData, inmateName: value });
+
+        if (value.length > 2) {
+            const results = await searchWBP(value);
+            setWbpSuggestions(results);
+            setShowSuggestions(true);
+        } else {
+            setWbpSuggestions([]);
+            setShowSuggestions(false);
+        }
+    };
+
+    const selectWbp = (wbp: any) => {
+        setFormData({
+            ...formData,
+            inmateName: wbp.nama,
+            roomBlock: `${wbp.blok} / ${wbp.kamar}`,
+        });
+        setShowSuggestions(false);
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
         // Save visitor data to storage
@@ -89,7 +118,21 @@ export default function RegistrationForm() {
                 relationship: formData.relationship,
             };
 
-            saveVisitor(visitorData);
+            await saveVisitor(visitorData);
+
+            // Save full registration data
+            const registration = await saveRegistration({
+                nik: formData.visitorId,
+                visitorName: formData.visitorName,
+                visitorPhone: formData.visitorPhone,
+                visitorAddress: formData.visitorAddress,
+                inmateName: formData.inmateName,
+                relationship: formData.relationship,
+                visitDate: formData.visitDate,
+                roomBlock: formData.roomBlock,
+            });
+
+            setRegNumber(registration.id);
             setSubmitted(true);
 
             setTimeout(() => {
@@ -103,12 +146,11 @@ export default function RegistrationForm() {
                     visitorPhone: '',
                     visitorAddress: '',
                     inmateName: '',
-                    inmateNumber: '',
                     relationship: '',
                     visitDate: '',
-                    visitTime: '',
+                    roomBlock: '',
                 });
-            }, 3000);
+            }, 5000);
         } catch (error) {
             alert('Terjadi kesalahan saat menyimpan data');
         }
@@ -124,10 +166,9 @@ export default function RegistrationForm() {
             visitorPhone: '',
             visitorAddress: '',
             inmateName: '',
-            inmateNumber: '',
             relationship: '',
             visitDate: '',
-            visitTime: '',
+            roomBlock: '',
         });
     };
 
@@ -139,7 +180,7 @@ export default function RegistrationForm() {
                 </div>
                 <h2 className="text-green-600 mb-2">Pendaftaran Berhasil!</h2>
                 <p className="text-gray-600">
-                    Nomor registrasi Anda: <strong>PAS-{Date.now().toString().slice(-8)}</strong>
+                    Nomor registrasi Anda: <strong>{regNumber}</strong>
                 </p>
                 <p className="text-gray-600 mt-2">
                     Silakan cek email/SMS untuk konfirmasi kunjungan.
@@ -359,7 +400,7 @@ export default function RegistrationForm() {
                             Data Warga Binaan (WBP)
                         </h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
+                            <div className="relative">
                                 <label htmlFor="inmateName" className="text-gray-700 block mb-2">
                                     Nama WBP *
                                 </label>
@@ -368,25 +409,40 @@ export default function RegistrationForm() {
                                     id="inmateName"
                                     name="inmateName"
                                     value={formData.inmateName}
-                                    onChange={handleChange}
+                                    onChange={handleWbpChange}
+                                    autoComplete="off"
                                     required
                                     className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    placeholder="Nama warga binaan"
+                                    placeholder="Ketik nama warga binaan..."
                                 />
+                                {showSuggestions && wbpSuggestions.length > 0 && (
+                                    <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-xl max-h-60 overflow-y-auto">
+                                        {wbpSuggestions.map((wbp, index) => (
+                                            <div
+                                                key={index}
+                                                onClick={() => selectWbp(wbp)}
+                                                className="px-4 py-3 hover:bg-blue-50 cursor-pointer border-b last:border-b-0 border-gray-100 transition-colors"
+                                            >
+                                                <p className="font-bold text-gray-900">{wbp.nama}</p>
+                                                <p className="text-xs text-blue-600 font-medium">{wbp.blok} / {wbp.kamar}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                             <div>
-                                <label htmlFor="inmateNumber" className="text-gray-700 block mb-2">
-                                    No. Register WBP *
+                                <label htmlFor="roomBlock" className="text-gray-700 block mb-2">
+                                    Blok Kamar WBP *
                                 </label>
                                 <input
                                     type="text"
-                                    id="inmateNumber"
-                                    name="inmateNumber"
-                                    value={formData.inmateNumber}
-                                    onChange={handleChange}
+                                    id="roomBlock"
+                                    name="roomBlock"
+                                    value={formData.roomBlock}
+                                    readOnly
                                     required
-                                    className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    placeholder="No. register"
+                                    className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg cursor-not-allowed font-semibold text-blue-800"
+                                    placeholder="Otomatis terisi..."
                                 />
                             </div>
                         </div>
@@ -412,26 +468,6 @@ export default function RegistrationForm() {
                                     min={new Date().toISOString().split('T')[0]}
                                     className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 />
-                            </div>
-                            <div>
-                                <label htmlFor="visitTime" className="text-gray-700 block mb-2">
-                                    Waktu Kunjungan *
-                                </label>
-                                <select
-                                    id="visitTime"
-                                    name="visitTime"
-                                    value={formData.visitTime}
-                                    onChange={handleChange}
-                                    required
-                                    className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                >
-                                    <option value="">Pilih waktu</option>
-                                    <option value="09:00">09:00 - 10:00 WIB</option>
-                                    <option value="10:00">10:00 - 11:00 WIB</option>
-                                    <option value="11:00">11:00 - 12:00 WIB</option>
-                                    <option value="13:00">13:00 - 14:00 WIB</option>
-                                    <option value="14:00">14:00 - 15:00 WIB</option>
-                                </select>
                             </div>
                         </div>
                     </div>
