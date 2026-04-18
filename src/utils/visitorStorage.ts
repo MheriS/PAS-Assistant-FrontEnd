@@ -1,5 +1,7 @@
 // Visitor data storage utility
-// Uses localStorage for demo - can be upgraded to Supabase backend
+// Menggunakan Laravel Backend API untuk menyimpan data pengunjung
+
+const API_BASE_URL = 'http://localhost:8000/api';
 
 export interface VisitorData {
     nik: string;
@@ -11,60 +13,40 @@ export interface VisitorData {
     visitCount?: number;
 }
 
-const STORAGE_KEY = 'pas_visitors_data';
-
-// Get all visitors
-export function getAllVisitors(): VisitorData[] {
+// Find visitor by NIK
+export async function findVisitorByNIK(nik: string): Promise<VisitorData | null> {
     try {
-        const data = localStorage.getItem(STORAGE_KEY);
-        return data ? JSON.parse(data) : [];
+        const response = await fetch(`${API_BASE_URL}/visitors/${nik}`);
+        if (!response.ok) return null;
+        const data = await response.json();
+        if (!data) return null;
+
+        return {
+            nik: data.nik,
+            name: data.name,
+            phone: data.phone,
+            address: data.address,
+            relationship: data.relationship,
+            lastVisit: data.last_visit,
+            visitCount: data.visit_count,
+        };
     } catch (error) {
-        console.error('Error reading visitor data:', error);
-        return [];
+        console.error('Error finding visitor:', error);
+        return null;
     }
 }
 
-// Find visitor by NIK
-export function findVisitorByNIK(nik: string): VisitorData | null {
-    const visitors = getAllVisitors();
-    return visitors.find(v => v.nik === nik) || null;
-}
-
 // Save or update visitor data
-export function saveVisitor(visitorData: VisitorData): void {
+export async function saveVisitor(visitorData: VisitorData): Promise<void> {
     try {
-        const visitors = getAllVisitors();
-        const existingIndex = visitors.findIndex(v => v.nik === visitorData.nik);
-
-        if (existingIndex >= 0) {
-            // Update existing visitor
-            visitors[existingIndex] = {
-                ...visitors[existingIndex],
-                ...visitorData,
-                visitCount: (visitors[existingIndex].visitCount || 0) + 1,
-                lastVisit: new Date().toISOString(),
-            };
-        } else {
-            // Add new visitor
-            visitors.push({
-                ...visitorData,
-                visitCount: 1,
-                lastVisit: new Date().toISOString(),
-            });
-        }
-
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(visitors));
+        await fetch(`${API_BASE_URL}/visitors`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(visitorData),
+        });
     } catch (error) {
         console.error('Error saving visitor data:', error);
         throw new Error('Gagal menyimpan data pengunjung');
     }
 }
 
-// Get visitor statistics
-export function getVisitorStats() {
-    const visitors = getAllVisitors();
-    return {
-        total: visitors.length,
-        totalVisits: visitors.reduce((sum, v) => sum + (v.visitCount || 0), 0),
-    };
-}
