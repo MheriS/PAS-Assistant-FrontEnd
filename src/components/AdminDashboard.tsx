@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getAllRegistrations, updateRegistrationStatus, type RegistrationRecord } from '@/utils/registrationStorage';
-import { CheckCircle, XCircle, Clock, Search, MapPin, User, FileText, Calendar, LayoutGrid } from 'lucide-react';
+import { CheckCircle, XCircle, Clock, Search, MapPin, User, FileText, Calendar, LayoutGrid, Users } from 'lucide-react';
 
 export default function AdminDashboard() {
     const [registrations, setRegistrations] = useState<RegistrationRecord[]>([]);
@@ -142,6 +142,17 @@ export default function AdminDashboard() {
                                                 <p className="text-sm font-bold text-blue-600">{reg.visitTime} WIB</p>
                                             </div>
                                         </div>
+                                        {reg.jumlahPengikut && reg.jumlahPengikut > 0 ? (
+                                            <div className="flex items-start gap-3 mt-2 pt-2 border-t border-gray-50">
+                                                <Users className="w-5 h-5 text-orange-500 mt-1" />
+                                                <div>
+                                                    <p className="text-xs text-gray-500 uppercase font-bold tracking-wider">Pengikut ({reg.jumlahPengikut})</p>
+                                                    <p className="text-xs text-gray-600">
+                                                        L: {reg.pengikutLaki} | P: {reg.pengikutPerempuan} | A: {reg.pengikutAnak}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        ) : null}
                                     </div>
 
                                     <div className="flex flex-col justify-end gap-2">
