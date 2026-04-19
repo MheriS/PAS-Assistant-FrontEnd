@@ -18,8 +18,9 @@ export async function findVisitorByNIK(nik: string): Promise<VisitorData | null>
     try {
         const response = await fetch(`${API_BASE_URL}/visitors/${nik}`);
         if (!response.ok) return null;
+
         const data = await response.json();
-        if (!data) return null;
+        if (!data || !data.nik) return null;
 
         return {
             nik: data.nik,
