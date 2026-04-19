@@ -225,11 +225,11 @@ export default function AdminDashboard() {
                                 <td class="colon-col">:</td>
                                 <td class="value-col">${reg.visitorName.toUpperCase()}</td>
                             </tr>
-                            <tr>
-                                <td class="label-col">Jenis Kelamin</td>
-                                <td class="colon-col">:</td>
-                                <td class="value-col">-</td>
-                            </tr>
+                             <tr>
+                                 <td class="label-col">Jenis Kelamin</td>
+                                 <td class="colon-col">:</td>
+                                 <td class="value-col">${reg.visitorGender || '-'}</td>
+                             </tr>
                             <tr>
                                 <td class="label-col">KTP</td>
                                 <td class="colon-col">:</td>

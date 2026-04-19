@@ -9,6 +9,7 @@ export interface VisitorData {
     phone: string;
     address: string;
     relationship: string;
+    gender: string;
     lastVisit?: string;
     visitCount?: number;
 }
@@ -28,6 +29,7 @@ export async function findVisitorByNIK(nik: string): Promise<VisitorData | null>
             phone: data.phone,
             address: data.address,
             relationship: data.relationship,
+            gender: data.gender,
             lastVisit: data.last_visit,
             visitCount: data.visit_count,
         };

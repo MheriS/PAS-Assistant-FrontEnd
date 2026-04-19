@@ -17,6 +17,7 @@ interface FormData {
     pengikutPerempuan: number;
     pengikutAnak: number;
     jumlahPengikut: number;
+    visitorGender: string;
 }
 
 export default function RegistrationForm() {
@@ -39,6 +40,7 @@ export default function RegistrationForm() {
         pengikutPerempuan: 0,
         pengikutAnak: 0,
         jumlahPengikut: 0,
+        visitorGender: '',
     });
     const [wbpSuggestions, setWbpSuggestions] = useState<any[]>([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
@@ -91,6 +93,7 @@ export default function RegistrationForm() {
                     visitorPhone: existingVisitor.phone,
                     visitorAddress: existingVisitor.address,
                     relationship: existingVisitor.relationship,
+                    visitorGender: existingVisitor.gender || '',
                 });
                 setIsReturningVisitor(true);
             } else {
@@ -156,6 +159,7 @@ export default function RegistrationForm() {
                 phone: formData.visitorPhone,
                 address: formData.visitorAddress,
                 relationship: formData.relationship,
+                gender: formData.visitorGender,
             };
 
             await saveVisitor(visitorData);
@@ -175,6 +179,7 @@ export default function RegistrationForm() {
                 pengikutPerempuan: formData.pengikutPerempuan,
                 pengikutAnak: formData.pengikutAnak,
                 jumlahPengikut: formData.jumlahPengikut,
+                visitorGender: formData.visitorGender,
             });
 
             setRegNumber(registration.id);
@@ -200,6 +205,7 @@ export default function RegistrationForm() {
                     pengikutPerempuan: 0,
                     pengikutAnak: 0,
                     jumlahPengikut: 0,
+                    visitorGender: '',
                 });
             }, 5000);
         } catch (error) {
@@ -228,6 +234,7 @@ export default function RegistrationForm() {
             pengikutPerempuan: 0,
             pengikutAnak: 0,
             jumlahPengikut: 0,
+            visitorGender: '',
         });
     };
 
@@ -415,6 +422,23 @@ export default function RegistrationForm() {
                                     className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     placeholder="08xxx"
                                 />
+                            </div>
+                            <div>
+                                <label htmlFor="visitorGender" className="text-gray-700 block mb-2">
+                                    Jenis Kelamin *
+                                </label>
+                                <select
+                                    id="visitorGender"
+                                    name="visitorGender"
+                                    value={formData.visitorGender}
+                                    onChange={handleChange}
+                                    required
+                                    className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                >
+                                    <option value="">Pilih jenis kelamin</option>
+                                    <option value="Laki-laki">Laki-laki</option>
+                                    <option value="Perempuan">Perempuan</option>
+                                </select>
                             </div>
                             <div>
                                 <label htmlFor="relationship" className="text-gray-700 block mb-2">

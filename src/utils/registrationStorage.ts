@@ -23,6 +23,7 @@ export interface RegistrationRecord {
     jumlahPengikut?: number;
     perkara?: string;
     queueNumber?: number;
+    visitorGender?: string;
 }
 
 // Mendapatkan semua data pendaftaran (admin)
@@ -51,6 +52,7 @@ export async function getAllRegistrations(): Promise<RegistrationRecord[]> {
             jumlahPengikut: item.jumlah_pengikut,
             perkara: item.wbp?.perkara,
             queueNumber: item.queue_number,
+            visitorGender: item.visitor_gender,
         }));
     } catch (error) {
         console.error('Error reading registration data:', error);
@@ -89,6 +91,7 @@ export async function saveRegistration(record: Omit<RegistrationRecord, 'id' | '
             pengikutPerempuan: item.pengikut_perempuan,
             pengikutAnak: item.pengikut_anak,
             jumlahPengikut: item.jumlah_pengikut,
+            visitorGender: item.visitor_gender,
         };
     } catch (error) {
         console.error('Error saving registration:', error);
@@ -134,6 +137,7 @@ export async function getRegistrationsByNIK(nik: string): Promise<RegistrationRe
             jumlahPengikut: item.jumlah_pengikut,
             perkara: item.wbp?.perkara,
             queueNumber: item.queue_number,
+            visitorGender: item.visitor_gender,
         }));
     } catch (error) {
         console.error('Error fetching data by NIK:', error);
