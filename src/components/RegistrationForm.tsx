@@ -47,6 +47,7 @@ export default function RegistrationForm() {
     const [availableDates, setAvailableDates] = useState<string[]>([]);
     const [availableSlots, setAvailableSlots] = useState<VisitSlot[]>([]);
     const [isLoadingSlots, setIsLoadingSlots] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
         fetchDates();
@@ -143,6 +144,10 @@ export default function RegistrationForm() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
+        if (isSubmitting) return;
+
+        setIsSubmitting(true);
+
         // Save visitor data to storage
         try {
             const visitorData: VisitorData = {
@@ -174,6 +179,7 @@ export default function RegistrationForm() {
 
             setRegNumber(registration.id);
             setSubmitted(true);
+            setIsSubmitting(false);
 
             setTimeout(() => {
                 setSubmitted(false);
@@ -197,7 +203,9 @@ export default function RegistrationForm() {
                 });
             }, 5000);
         } catch (error) {
+            console.error('Registration error:', error);
             alert('Terjadi kesalahan saat menyimpan data');
+            setIsSubmitting(false);
         }
     };
 
@@ -676,10 +684,23 @@ export default function RegistrationForm() {
 
                     <button
                         type="submit"
-                        className="w-full bg-gradient-to-r from-blue-600 to-emerald-600 text-white py-3 rounded-lg hover:shadow-lg hover:scale-[1.02] transition-all duration-200 flex items-center justify-center gap-2"
+                        disabled={isSubmitting}
+                        className={`w-full py-3 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2 ${isSubmitting
+                            ? 'bg-gray-400 cursor-not-allowed text-white'
+                            : 'bg-gradient-to-r from-blue-600 to-emerald-600 text-white hover:shadow-lg hover:scale-[1.02]'
+                            }`}
                     >
-                        <CheckCircle className="w-5 h-5" />
-                        Daftar Kunjungan
+                        {isSubmitting ? (
+                            <>
+                                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                Memproses Pendaftaran...
+                            </>
+                        ) : (
+                            <>
+                                <CheckCircle className="w-5 h-5" />
+                                Daftar Kunjungan
+                            </>
+                        )}
                     </button>
                 </form>
             )}
