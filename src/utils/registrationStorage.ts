@@ -22,6 +22,7 @@ export interface RegistrationRecord {
     pengikutAnak?: number;
     jumlahPengikut?: number;
     perkara?: string;
+    queueNumber?: number;
 }
 
 // Mendapatkan semua data pendaftaran (admin)
@@ -49,6 +50,7 @@ export async function getAllRegistrations(): Promise<RegistrationRecord[]> {
             pengikutAnak: item.pengikut_anak,
             jumlahPengikut: item.jumlah_pengikut,
             perkara: item.wbp?.perkara,
+            queueNumber: item.queue_number,
         }));
     } catch (error) {
         console.error('Error reading registration data:', error);
@@ -131,6 +133,7 @@ export async function getRegistrationsByNIK(nik: string): Promise<RegistrationRe
             pengikutAnak: item.pengikut_anak,
             jumlahPengikut: item.jumlah_pengikut,
             perkara: item.wbp?.perkara,
+            queueNumber: item.queue_number,
         }));
     } catch (error) {
         console.error('Error fetching data by NIK:', error);

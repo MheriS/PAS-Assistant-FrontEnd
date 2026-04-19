@@ -28,14 +28,6 @@ export default function AdminDashboard() {
         const printWindow = window.open('', '_blank');
         if (!printWindow) return;
 
-        const dateFormatted = new Date(reg.visitDate).toLocaleDateString('id-ID', {
-            weekday: 'long',
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-        });
-
-        const createdAtFormatted = new Date(reg.createdAt).toLocaleString('id-ID');
 
         printWindow.document.write(`
             <html>
@@ -223,7 +215,7 @@ export default function AdminDashboard() {
                         <div class="title-section">
                             <h2>SURAT IZIN KUNJUNGAN</h2>
                             <div class="queue-box">
-                                No Antrian : <b>${reg.id.split('-').pop() || '1'}</b>
+                                No Antrian : <b>${reg.queueNumber || '1'}</b>
                             </div>
                         </div>
 
