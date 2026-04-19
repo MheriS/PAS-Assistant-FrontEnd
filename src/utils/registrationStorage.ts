@@ -28,6 +28,7 @@ export async function getAllRegistrations(): Promise<RegistrationRecord[]> {
     try {
         const response = await fetch(`${API_BASE_URL}/registrations`);
         const data = await response.json();
+        if (!Array.isArray(data)) return [];
         return data.map((item: any) => ({
             id: item.id,
             nik: item.nik,
