@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getAllRegistrations, updateRegistrationStatus, type RegistrationRecord } from '@/utils/registrationStorage';
-import { CheckCircle, XCircle, Clock, Search, MapPin, User, FileText, Calendar, LayoutGrid, Users } from 'lucide-react';
+import { CheckCircle, XCircle, Clock, Search, MapPin, User, FileText, Calendar, LayoutGrid, Users, Printer } from 'lucide-react';
 import AdminScheduleManager from './AdminScheduleManager';
 
 export default function AdminDashboard() {
@@ -22,6 +22,317 @@ export default function AdminDashboard() {
         await updateRegistrationStatus(id, status);
         const data = await getAllRegistrations();
         setRegistrations(data);
+    };
+
+    const handlePrint = (reg: RegistrationRecord) => {
+        const printWindow = window.open('', '_blank');
+        if (!printWindow) return;
+
+        const dateFormatted = new Date(reg.visitDate).toLocaleDateString('id-ID', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+
+        const createdAtFormatted = new Date(reg.createdAt).toLocaleString('id-ID');
+
+        printWindow.document.write(`
+            <html>
+                <head>
+                    <title>Surat Izin Kunjungan - ${reg.id}</title>
+                    <style>
+                        @import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600;700&display=swap');
+                        * { box-sizing: border-box; }
+                        body { 
+                            font-family: 'Times New Roman', serif; 
+                            line-height: 1.2; 
+                            color: #000; 
+                            margin: 0; 
+                            padding: 0;
+                            background: #fff;
+                        }
+                        .page {
+                            width: 148mm;
+                            height: 210mm;
+                            margin: auto;
+                            padding: 8mm;
+                            position: relative;
+                            background: white;
+                            color: #000;
+                            box-sizing: border-box;
+                            overflow: hidden;
+                            display: flex;
+                            flex-direction: column;
+                        }
+                        .header {
+                            display: table;
+                            width: 100%;
+                            margin-bottom: 2mm;
+                        }
+                        .logo-cell {
+                            display: table-cell;
+                            vertical-align: middle;
+                            width: 20mm;
+                        }
+                        .logo-cell svg { width: 15mm; height: 15mm; }
+                        .header-text-cell {
+                            display: table-cell;
+                            vertical-align: middle;
+                            text-align: center;
+                        }
+                        .header-text-cell h3 { margin: 0; font-size: 9pt; font-weight: bold; line-height: 1.2; }
+                        .header-text-cell p { margin: 0; font-size: 8pt; line-height: 1.2; }
+                        .header-text-cell small { font-size: 7pt; font-weight: 500; }
+                        
+                        .divider {
+                            border-bottom: 2px solid #000;
+                            border-top: 1px solid #000;
+                            height: 3px;
+                            margin: 1.5mm 0;
+                        }
+
+                        .title-section {
+                            text-align: center;
+                            position: relative;
+                            margin-bottom: 4mm;
+                        }
+                        .title-section h2 {
+                            margin: 0;
+                            font-size: 11pt;
+                            text-decoration: underline;
+                            font-weight: bold;
+                        }
+                        .queue-box {
+                            position: absolute;
+                            top: 0;
+                            right: 0;
+                            border: 1px solid #000;
+                            padding: 1mm 4mm;
+                            font-size: 9pt;
+                        }
+                        .queue-box b { font-size: 12pt; }
+
+                        .data-table {
+                            width: 100%;
+                            border-collapse: collapse;
+                            margin-bottom: 3mm;
+                            font-size: 9pt;
+                        }
+                        .data-table td {
+                            vertical-align: top;
+                            padding: 0.5mm 0;
+                        }
+                        .label-col { width: 32mm; }
+                        .colon-col { width: 3mm; text-align: center; }
+                        .value-col { font-weight: 500; }
+
+                        .followers-grid {
+                            font-size: 7.5pt;
+                            margin-top: 0.5mm;
+                        }
+                        .followers-grid span { display: inline-block; width: 25%; }
+
+                        .wbp-container {
+                            margin-top: 2mm;
+                            padding-top: 1.5mm;
+                            border-top: 1px dashed #000;
+                            display: table;
+                            width: 100%;
+                        }
+                        .wbp-photo-cell {
+                            display: table-cell;
+                            width: 32mm;
+                            vertical-align: top;
+                        }
+                        .wbp-photo-box {
+                            width: 28mm;
+                            height: 35mm;
+                            border: 1px solid #000;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            font-size: 7pt;
+                        }
+                        .wbp-info-cell {
+                            display: table-cell;
+                            vertical-align: top;
+                            padding-left: 3mm;
+                        }
+                        .wbp-title {
+                            font-weight: bold;
+                            border-bottom: 1px solid #000;
+                            margin-bottom: 1.5mm;
+                            padding-bottom: 0.5mm;
+                            font-size: 8.5pt;
+                        }
+
+                        .footer-table {
+                            width: 100%;
+                            margin-top: 3mm;
+                            border-collapse: collapse;
+                        }
+                        .footer-table td {
+                            width: 50%;
+                            text-align: center;
+                            vertical-align: top;
+                            padding: 0;
+                        }
+                        .sig-label {
+                            font-size: 7.5pt;
+                            margin-top: 0.5mm;
+                        }
+
+                        .notice-section {
+                            margin-top: auto; /* Push to bottom but within one page */
+                            font-size: 6.8pt;
+                            color: #d32f2f;
+                            font-style: italic;
+                            line-height: 1.1;
+                            border-top: 0.5px solid #000;
+                            padding-top: 1mm;
+                        }
+
+                        @media print {
+                            body { margin: 0; padding: 0; }
+                            .page { border: none; padding: 10mm; }
+                            @page { size: A5; margin: 0; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="page">
+                        <div class="header">
+                            <div class="logo-cell">
+                                <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M50 5L20 20V45C20 63.3333 32.5 80.4167 50 85C67.5 80.4167 80 63.3333 80 45V20L50 5Z" stroke="black" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M50 25V65" stroke="black" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M35 40L65 40" stroke="black" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </div>
+                            <div class="header-text-cell">
+                                <h3>KEMENTERIAN IMIGRASI DAN PEMASYARAKATAN REPUBLIK INDONESIA</h3>
+                                <p>KANTOR WILAYAH KEMENTERIAN HUKUM DAN HAM JAWA TIMUR</p>
+                                <h3>LEMBAGA PEMASYARAKATAN NARKOTIKA PAMEKASAN</h3>
+                                <small>Jalan Pembina No. 02 Pamekasan Telp 0324325333 Fax 0324325333</small>
+                            </div>
+                        </div>
+
+                        <div class="divider"></div>
+
+                        <div class="title-section">
+                            <h2>SURAT IZIN KUNJUNGAN</h2>
+                            <div class="queue-box">
+                                No Antrian : <b>${reg.id.split('-').pop() || '1'}</b>
+                            </div>
+                        </div>
+
+                        <table class="data-table">
+                            <tr>
+                                <td class="label-col">Nama Pengunjung</td>
+                                <td class="colon-col">:</td>
+                                <td class="value-col">${reg.visitorName.toUpperCase()}</td>
+                            </tr>
+                            <tr>
+                                <td class="label-col">Jenis Kelamin</td>
+                                <td class="colon-col">:</td>
+                                <td class="value-col">-</td>
+                            </tr>
+                            <tr>
+                                <td class="label-col">KTP</td>
+                                <td class="colon-col">:</td>
+                                <td class="value-col">${reg.nik}</td>
+                            </tr>
+                            <tr>
+                                <td class="label-col">Alamat</td>
+                                <td class="colon-col">:</td>
+                                <td class="value-col">${reg.visitorAddress.toUpperCase()}</td>
+                            </tr>
+                            <tr>
+                                <td class="label-col">No. Telepon</td>
+                                <td class="colon-col">:</td>
+                                <td class="value-col">${reg.visitorPhone}</td>
+                            </tr>
+                            <tr>
+                                <td class="label-col">Pengikut</td>
+                                <td class="colon-col">:</td>
+                                <td class="value-col">
+                                    <div class="followers-grid">
+                                        <span>Laki-laki : ${reg.pengikutLaki || 0}</span>
+                                        <span>Perempuan : ${reg.pengikutPerempuan || 0}</span>
+                                        <span>Anak : ${reg.pengikutAnak || 0}</span>
+                                        <span>Total : ${reg.jumlahPengikut || 0}</span>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="label-col">Barang dititipkan</td>
+                                <td class="colon-col">:</td>
+                                <td class="value-col">-</td>
+                            </tr>
+                        </table>
+
+                        <div class="wbp-container">
+                            <div class="wbp-photo-cell">
+                                <div class="wbp-photo-box">FOTO WBP</div>
+                            </div>
+                            <div class="wbp-info-cell">
+                                <div class="wbp-title">Warga Binaan yang dikunjungi :</div>
+                                <table class="data-table" style="margin-bottom: 0;">
+                                    <tr>
+                                        <td style="width: 25mm;">Nama</td>
+                                        <td style="width: 3mm; text-align: center;">:</td>
+                                        <td style="font-weight: bold;">${reg.inmateName.toUpperCase()}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Perkara</td>
+                                        <td style="text-align: center;">:</td>
+                                        <td style="font-weight: 500;">${reg.perkara || '-'}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Blok / Kamar</td>
+                                        <td style="text-align: center;">:</td>
+                                        <td style="font-weight: 500;">${reg.roomBlock || '-'}</td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+
+                        <table class="footer-table">
+                            <tr>
+                                <td></td>
+                                <td style="font-size: 8.5pt; padding-bottom: 2mm;">
+                                    Pamekasan, ${new Date(reg.visitDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div style="height: 12mm;"></div>
+                                    <p style="margin:0; font-weight: bold;">( ................................................ )</p>
+                                    <p class="sig-label">Pengunjung</p>
+                                </td>
+                                <td>
+                                    <div style="height: 12mm;"></div>
+                                    <p style="margin:0; font-weight: bold;">( ................................................ )</p>
+                                    <p class="sig-label">Petugas Pendaftaran</p>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <div class="notice-section">
+                            <div>* Kunjungan Tidak Dipungut Biaya (GRATIS)</div>
+                            <div>* Apabila anda ada keluhan terhadap pelayanan kunjungan Silahkan SMS 08119102020</div>
+                        </div>
+                    </div>
+                    <script>
+                        window.onload = () => {
+                            window.print();
+                        };
+                    </script>
+                </body>
+            </html>
+        `);
+        printWindow.document.close();
     };
 
     const filteredRegistrations = registrations.filter(reg => {
@@ -233,10 +544,18 @@ export default function AdminDashboard() {
                                                         </button>
                                                     </>
                                                 )}
+                                                {reg.status === 'approved' && (
+                                                    <button
+                                                        onClick={() => handlePrint(reg)}
+                                                        className="w-full bg-blue-600 text-white py-2 rounded-xl flex items-center justify-center gap-2 hover:bg-blue-700 transition-all font-medium shadow-sm hover:shadow-md"
+                                                    >
+                                                        <Printer className="w-4 h-4" /> Cetak Kartu
+                                                    </button>
+                                                )}
                                                 {reg.status !== 'pending' && (
                                                     <button
                                                         onClick={() => handleUpdateStatus(reg.id, 'pending')}
-                                                        className="text-xs text-gray-400 hover:text-gray-600 underline"
+                                                        className="text-xs text-gray-400 hover:text-gray-600 underline text-center"
                                                     >
                                                         Kembalikan ke Pending
                                                     </button>
