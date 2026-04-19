@@ -146,3 +146,82 @@ export async function searchWBP(query: string): Promise<any[]> {
         return [];
     }
 }
+
+// Visit Slot Management
+export interface VisitSlot {
+    id: number;
+    date: string;
+    session_name?: string;
+    start_time: string;
+    end_time: string;
+    max_visitors: number;
+    is_available: boolean;
+}
+
+export async function getAllVisitSlots(): Promise<VisitSlot[]> {
+    try {
+        const response = await fetch(`${API_BASE_URL}/visit-slots`);
+        return await response.json();
+    } catch (error) {
+        console.error('Error fetching visit slots:', error);
+        return [];
+    }
+}
+
+export async function getAvailableDates(): Promise<string[]> {
+    try {
+        const response = await fetch(`${API_BASE_URL}/visit-slots/available-dates`);
+        return await response.json();
+    } catch (error) {
+        console.error('Error fetching available dates:', error);
+        return [];
+    }
+}
+
+export async function getAvailableTimes(date: string): Promise<VisitSlot[]> {
+    try {
+        const response = await fetch(`${API_BASE_URL}/visit-slots/available-times/${date}`);
+        return await response.json();
+    } catch (error) {
+        console.error('Error fetching available times:', error);
+        return [];
+    }
+}
+
+export async function createVisitSlot(data: {
+    date: string,
+    session_name?: string,
+    start_time: string,
+    end_time: string,
+    max_visitors?: number
+}): Promise<void> {
+    try {
+        await fetch(`${API_BASE_URL}/visit-slots`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data),
+        });
+    } catch (error) {
+        console.error('Error creating visit slot:', error);
+    }
+}
+
+export async function deleteVisitSlot(id: number): Promise<void> {
+    try {
+        await fetch(`${API_BASE_URL}/visit-slots/${id}`, {
+            method: 'DELETE',
+        });
+    } catch (error) {
+        console.error('Error deleting visit slot:', error);
+    }
+}
+
+export async function toggleVisitSlotAvailability(id: number): Promise<void> {
+    try {
+        await fetch(`${API_BASE_URL}/visit-slots/${id}/toggle`, {
+            method: 'PATCH',
+        });
+    } catch (error) {
+        console.error('Error toggling visit slot:', error);
+    }
+}

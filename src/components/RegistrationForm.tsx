@@ -1,8 +1,7 @@
-import { searchWBP } from '@/utils/registrationStorage';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Calendar, User, IdCard, FileText, CheckCircle, Search, Scan, UserCheck, UserPlus } from 'lucide-react';
 import { findVisitorByNIK, saveVisitor, type VisitorData } from '@/utils/visitorStorage';
-import { saveRegistration } from '@/utils/registrationStorage';
+import { saveRegistration, getAvailableDates, getAvailableTimes, searchWBP, type VisitSlot } from '@/utils/registrationStorage';
 
 interface FormData {
     visitorName: string;
@@ -12,6 +11,7 @@ interface FormData {
     inmateName: string;
     relationship: string;
     visitDate: string;
+    visitTime: string;
     roomBlock: string;
     pengikutLaki: number;
     pengikutPerempuan: number;
@@ -33,6 +33,7 @@ export default function RegistrationForm() {
         inmateName: '',
         relationship: '',
         visitDate: '',
+        visitTime: '',
         roomBlock: '',
         pengikutLaki: 0,
         pengikutPerempuan: 0,
@@ -43,6 +44,30 @@ export default function RegistrationForm() {
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [submitted, setSubmitted] = useState(false);
     const [selectedWbpPhoto, setSelectedWbpPhoto] = useState<string | null>(null);
+    const [availableDates, setAvailableDates] = useState<string[]>([]);
+    const [availableSlots, setAvailableSlots] = useState<VisitSlot[]>([]);
+    const [isLoadingSlots, setIsLoadingSlots] = useState(false);
+
+    useEffect(() => {
+        fetchDates();
+    }, []);
+
+    const fetchDates = async () => {
+        const dates = await getAvailableDates();
+        setAvailableDates(dates);
+    };
+
+    const handleDateChange = async (date: string) => {
+        setFormData({ ...formData, visitDate: date, visitTime: '' });
+        if (date) {
+            setIsLoadingSlots(true);
+            const times = await getAvailableTimes(date);
+            setAvailableSlots(times);
+            setIsLoadingSlots(false);
+        } else {
+            setAvailableSlots([]);
+        }
+    };
 
     const handleNikSearch = async () => {
         if (!nikInput || nikInput.length !== 16) {
@@ -139,6 +164,7 @@ export default function RegistrationForm() {
                 inmateName: formData.inmateName,
                 relationship: formData.relationship,
                 visitDate: formData.visitDate,
+                visitTime: formData.visitTime,
                 roomBlock: formData.roomBlock,
                 pengikutLaki: formData.pengikutLaki,
                 pengikutPerempuan: formData.pengikutPerempuan,
@@ -162,6 +188,7 @@ export default function RegistrationForm() {
                     inmateName: '',
                     relationship: '',
                     visitDate: '',
+                    visitTime: '',
                     roomBlock: '',
                     pengikutLaki: 0,
                     pengikutPerempuan: 0,
@@ -187,6 +214,7 @@ export default function RegistrationForm() {
             inmateName: '',
             relationship: '',
             visitDate: '',
+            visitTime: '',
             roomBlock: '',
             pengikutLaki: 0,
             pengikutPerempuan: 0,
@@ -576,23 +604,58 @@ export default function RegistrationForm() {
                     <div className="border-t border-border pt-6">
                         <h3 className="text-gray-900 mb-4 flex items-center gap-2">
                             <Calendar className="w-5 h-5 text-blue-600" />
-                            Jadwal Kunjungan
+                            Jadwal Kunjungan (Pilih slot tersedia)
                         </h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label htmlFor="visitDate" className="text-gray-700 block mb-2">
                                     Tanggal Kunjungan *
                                 </label>
-                                <input
-                                    type="date"
+                                <select
                                     id="visitDate"
                                     name="visitDate"
                                     value={formData.visitDate}
+                                    onChange={(e) => handleDateChange(e.target.value)}
+                                    required
+                                    className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                >
+                                    <option value="">Pilih tanggal</option>
+                                    {availableDates.map((date: string) => (
+                                        <option key={date} value={date}>
+                                            {new Date(date).toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                                        </option>
+                                    ))}
+                                    {availableDates.length === 0 && <option disabled>Tidak ada jadwal tersedia</option>}
+                                </select>
+                            </div>
+                            <div>
+                                <label htmlFor="visitTime" className="text-gray-700 block mb-2">
+                                    Pilih Sesi Kunjungan *
+                                </label>
+                                <select
+                                    id="visitTime"
+                                    name="visitTime"
+                                    value={formData.visitTime}
                                     onChange={handleChange}
                                     required
-                                    min={new Date().toISOString().split('T')[0]}
-                                    className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                />
+                                    disabled={!formData.visitDate || isLoadingSlots}
+                                    className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50"
+                                >
+                                    <option value="">{isLoadingSlots ? 'Memuat jadwal...' : 'Pilih jadwal'}</option>
+                                    {availableSlots.map(slot => {
+                                        const label = slot.session_name
+                                            ? `${slot.session_name} (${slot.start_time.substring(0, 5)} - ${slot.end_time.substring(0, 5)})`
+                                            : `${slot.start_time.substring(0, 5)} - ${slot.end_time.substring(0, 5)}`;
+                                        return (
+                                            <option key={slot.id} value={label}>
+                                                {label}
+                                            </option>
+                                        );
+                                    })}
+                                    {formData.visitDate && !isLoadingSlots && availableSlots.length === 0 && (
+                                        <option disabled>Penuh / Tidak tersedia</option>
+                                    )}
+                                </select>
                             </div>
                         </div>
                     </div>
