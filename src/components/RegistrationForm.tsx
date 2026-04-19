@@ -42,6 +42,7 @@ export default function RegistrationForm() {
     const [wbpSuggestions, setWbpSuggestions] = useState<any[]>([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [submitted, setSubmitted] = useState(false);
+    const [selectedWbpPhoto, setSelectedWbpPhoto] = useState<string | null>(null);
 
     const handleNikSearch = async () => {
         if (!nikInput || nikInput.length !== 16) {
@@ -110,6 +111,7 @@ export default function RegistrationForm() {
             inmateName: wbp.nama,
             roomBlock: `${wbp.blok} / ${wbp.kamar}`,
         });
+        setSelectedWbpPhoto(wbp.foto);
         setShowSuggestions(false);
     };
 
@@ -176,6 +178,7 @@ export default function RegistrationForm() {
         setNikChecked(false);
         setNikInput('');
         setIsReturningVisitor(false);
+        setSelectedWbpPhoto(null);
         setFormData({
             visitorName: '',
             visitorId: '',
@@ -532,6 +535,23 @@ export default function RegistrationForm() {
                                                 <p className="text-xs text-blue-600 font-medium">{wbp.blok} / {wbp.kamar}</p>
                                             </div>
                                         ))}
+                                    </div>
+                                )}
+
+                                {selectedWbpPhoto && (
+                                    <div className="mt-4 flex items-center gap-4 p-4 bg-blue-50 border border-blue-100 rounded-xl animate-in fade-in slide-in-from-top-2 duration-300">
+                                        <div className="relative group">
+                                            <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-600 to-emerald-600 rounded-lg blur opacity-30 group-hover:opacity-100 transition duration-500"></div>
+                                            <img
+                                                src={selectedWbpPhoto}
+                                                alt="WBP Photo"
+                                                className="relative w-24 h-24 object-cover rounded-lg border-2 border-white shadow-md"
+                                            />
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-medium text-blue-800">Foto Teridentifikasi</p>
+                                            <p className="text-xs text-blue-600 mt-1">Pastikan wajah sesuai dengan warga binaan yang ingin dikunjungi.</p>
+                                        </div>
                                     </div>
                                 )}
                             </div>
