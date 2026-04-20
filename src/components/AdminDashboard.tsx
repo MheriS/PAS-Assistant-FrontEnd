@@ -2,11 +2,12 @@ import { useState, useEffect } from 'react';
 import { getAllRegistrations, updateRegistrationStatus, type RegistrationRecord } from '@/utils/registrationStorage';
 import { CheckCircle, XCircle, Clock, Search, MapPin, User, FileText, Calendar, LayoutGrid, Users, Printer } from 'lucide-react';
 import AdminScheduleManager from './AdminScheduleManager';
+import AdminWBPManager from './AdminWBPManager';
 
 export default function AdminDashboard() {
     const [registrations, setRegistrations] = useState<RegistrationRecord[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
-    const [filter, setFilter] = useState<'all' | 'pending' | 'approved' | 'rejected' | 'management'>('all');
+    const [filter, setFilter] = useState<'all' | 'pending' | 'approved' | 'rejected' | 'management' | 'wbp'>('all');
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage] = useState(5);
 
@@ -266,7 +267,9 @@ export default function AdminDashboard() {
 
                         <div class="wbp-container">
                             <div class="wbp-photo-cell">
-                                <div class="wbp-photo-box">FOTO WBP</div>
+                                <div class="wbp-photo-box">
+                                    ${reg.inmatePhoto ? `<img src="${reg.inmatePhoto}" style="width: 100%; height: 100%; object-cover: cover;" />` : 'FOTO WBP'}
+                                </div>
                             </div>
                             <div class="wbp-info-cell">
                                 <div class="wbp-title">Warga Binaan yang dikunjungi :</div>
@@ -375,7 +378,7 @@ export default function AdminDashboard() {
                 </div>
 
                 <div className="flex bg-gray-100 p-1 rounded-xl w-full md:w-auto overflow-x-auto">
-                    {['all', 'pending', 'approved', 'rejected', 'management'].map((f) => (
+                    {['all', 'pending', 'approved', 'rejected', 'management', 'wbp'].map((f) => (
                         <button
                             key={f}
                             onClick={() => setFilter(f as any)}
@@ -387,7 +390,8 @@ export default function AdminDashboard() {
                             {f === 'all' ? 'Semua' :
                                 f === 'pending' ? 'Tertunda' :
                                     f === 'approved' ? 'Disetujui' :
-                                        f === 'rejected' ? 'Ditolak' : 'Atur Jadwal'}
+                                        f === 'rejected' ? 'Ditolak' :
+                                            f === 'management' ? 'Atur Jadwal' : 'Data WBP'}
                         </button>
                     ))}
                 </div>
@@ -395,6 +399,8 @@ export default function AdminDashboard() {
 
             {filter === 'management' ? (
                 <AdminScheduleManager />
+            ) : filter === 'wbp' ? (
+                <AdminWBPManager />
             ) : (
                 <>
                     {/* Pagination Controls Top */}

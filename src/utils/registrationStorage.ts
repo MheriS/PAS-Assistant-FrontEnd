@@ -24,6 +24,7 @@ export interface RegistrationRecord {
     perkara?: string;
     queueNumber?: number;
     visitorGender?: string;
+    inmatePhoto?: string;
 }
 
 // Mendapatkan semua data pendaftaran (admin)
@@ -53,6 +54,7 @@ export async function getAllRegistrations(): Promise<RegistrationRecord[]> {
             perkara: item.wbp?.perkara,
             queueNumber: item.queue_number,
             visitorGender: item.visitor_gender,
+            inmatePhoto: item.wbp?.foto,
         }));
     } catch (error) {
         console.error('Error reading registration data:', error);
@@ -138,6 +140,7 @@ export async function getRegistrationsByNIK(nik: string): Promise<RegistrationRe
             perkara: item.wbp?.perkara,
             queueNumber: item.queue_number,
             visitorGender: item.visitor_gender,
+            inmatePhoto: item.wbp?.foto,
         }));
     } catch (error) {
         console.error('Error fetching data by NIK:', error);
