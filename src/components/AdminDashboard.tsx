@@ -13,6 +13,7 @@ export default function AdminDashboard() {
     const [filter, setFilter] = useState<'all' | 'pending' | 'approved' | 'rejected' | 'management' | 'wbp' | 'medicine'>('all');
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage] = useState(5);
+    const [filterDate, setFilterDate] = useState<string>(''); // Kosong berarti semua tanggal
     const [showMedicineModal, setShowMedicineModal] = useState(false);
     const [showMoneyModal, setShowMoneyModal] = useState(false);
     const [selectedRegForMedicine, setSelectedRegForMedicine] = useState<string | null>(null);
@@ -464,7 +465,9 @@ export default function AdminDashboard() {
 
         const matchesFilter = filter === 'all' || reg.status === filter;
 
-        return matchesSearch && matchesFilter;
+        const matchesDate = !filterDate || reg.visitDate === filterDate;
+
+        return matchesSearch && matchesFilter && matchesDate;
     });
 
     // Pagination logic
@@ -473,10 +476,10 @@ export default function AdminDashboard() {
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
     const currentItems = filteredRegistrations.slice(indexOfFirstItem, indexOfLastItem);
 
-    // Reset to page 1 when filter or search changes
+    // Reset current page when filter or search changes
     useEffect(() => {
         setCurrentPage(1);
-    }, [searchTerm, filter]);
+    }, [searchTerm, filter, filterDate]);
 
     const getStatusStyle = (status: string) => {
         switch (status) {
@@ -529,40 +532,30 @@ export default function AdminDashboard() {
                 <DepositDashboard />
             ) : (
                 <>
-                    {/* Pagination Controls Top */}
-                    <div className="bg-white p-4 rounded-xl border border-gray-100 flex items-center justify-between text-sm shadow-sm">
-                        <div className="flex gap-4">
-                            <span className="text-gray-500 font-medium">Total: <span className="text-blue-600">{filteredRegistrations.length}</span></span>
-                            <span className="text-gray-500 font-medium">Halaman: <span className="text-blue-600">{currentPage} dari {totalPages || 1}</span></span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <button
-                                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                                disabled={currentPage === 1}
-                                className="p-2 border rounded-lg hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                            >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg>
-                            </button>
-
-                            <div className="hidden sm:flex gap-1">
-                                {[...Array(totalPages)].map((_, i) => (
+                    <div className="bg-white p-4 rounded-xl border border-gray-100 flex flex-wrap items-center justify-between gap-4 text-sm shadow-sm">
+                        <div className="flex items-center gap-6">
+                            <span className="text-gray-500 font-medium">Total Data Pencarian: <span className="text-blue-600">{filteredRegistrations.length}</span></span>
+                            <div className="flex items-center gap-2 border-l pl-6 border-gray-200">
+                                <Calendar className="w-4 h-4 text-gray-400" />
+                                <span className="text-gray-500 font-medium">Filter Tanggal:</span>
+                                <input
+                                    type="date"
+                                    value={filterDate}
+                                    onChange={(e) => setFilterDate(e.target.value)}
+                                    className="px-2 py-1 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-xs font-semibold bg-gray-50"
+                                />
+                                {filterDate && (
                                     <button
-                                        key={i}
-                                        onClick={() => setCurrentPage(i + 1)}
-                                        className={`w-8 h-8 rounded-lg flex items-center justify-center border transition-all font-medium ${currentPage === i + 1 ? 'bg-blue-600 text-white border-blue-600 shadow-sm' : 'hover:bg-gray-50 border-gray-200 text-gray-500'}`}
+                                        onClick={() => setFilterDate('')}
+                                        className="text-red-500 hover:text-red-700"
                                     >
-                                        {i + 1}
+                                        <XCircle className="w-4 h-4" />
                                     </button>
-                                )).slice(Math.max(0, currentPage - 3), Math.min(totalPages, currentPage + 2))}
+                                )}
                             </div>
-
-                            <button
-                                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                                disabled={currentPage === totalPages || totalPages === 0}
-                                className="p-2 border rounded-lg hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                            >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>
-                            </button>
+                        </div>
+                        <div className="text-gray-400 text-xs italic">
+                            Halaman {currentPage} dari {totalPages || 1}
                         </div>
                     </div>
 
