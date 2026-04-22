@@ -1,15 +1,22 @@
 import { useState, useEffect } from 'react';
 import { getAllRegistrations, updateRegistrationStatus, type RegistrationRecord } from '@/utils/registrationStorage';
-import { CheckCircle, XCircle, Clock, Search, MapPin, User, FileText, Calendar, LayoutGrid, Users, Printer } from 'lucide-react';
+import { CheckCircle, XCircle, Clock, Search, MapPin, User, FileText, Calendar, LayoutGrid, Users, Printer, Pill, DollarSign } from 'lucide-react';
 import AdminScheduleManager from './AdminScheduleManager';
 import AdminWBPManager from './AdminWBPManager';
+import DepositDashboard from './DepositDashboard';
+import MedicineEntryModal from './MedicineEntryModal';
+import MoneyEntryModal from './MoneyEntryModal';
 
 export default function AdminDashboard() {
     const [registrations, setRegistrations] = useState<RegistrationRecord[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
-    const [filter, setFilter] = useState<'all' | 'pending' | 'approved' | 'rejected' | 'management' | 'wbp'>('all');
+    const [filter, setFilter] = useState<'all' | 'pending' | 'approved' | 'rejected' | 'management' | 'wbp' | 'medicine'>('all');
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage] = useState(5);
+    const [showMedicineModal, setShowMedicineModal] = useState(false);
+    const [showMoneyModal, setShowMoneyModal] = useState(false);
+    const [selectedRegForMedicine, setSelectedRegForMedicine] = useState<string | null>(null);
+    const [selectedRegForMoney, setSelectedRegForMoney] = useState<string | null>(null);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -330,6 +337,122 @@ export default function AdminDashboard() {
         printWindow.document.close();
     };
 
+    const handlePrintSmallSlip = async (regId: string, type: 'medicine' | 'money') => {
+        const url = type === 'medicine'
+            ? `http://localhost:8000/api/medicine-deliveries?registration_id=${regId}`
+            : `http://localhost:8000/api/money-deposits?registration_id=${regId}`;
+
+        try {
+            const response = await fetch(url);
+            const data = await response.json();
+
+            if (!data || data.length === 0) {
+                alert(`Tidak ada data ${type} untuk pendaftaran ini`);
+                return;
+            }
+
+            const wbpInfo = data[0].wbp || data[0].registration?.wbp;
+            const blok = wbpInfo?.blok || '-';
+            const kamar = wbpInfo?.kamar || '-';
+
+            const printWindow = window.open('', '_blank');
+            if (!printWindow) return;
+
+            const title = type === 'medicine' ? 'SLIP PENITIPAN OBAT' : 'SLIP PENITIPAN UANG';
+
+            printWindow.document.write(`
+                <html>
+                    <head>
+                        <title>${title}</title>
+                        <style>
+                            @page { 
+                                size: 58mm auto; 
+                                margin: 0; 
+                            }
+                            html, body {
+                                margin: 0;
+                                padding: 0;
+                                width: 58mm;
+                                height: auto;
+                                background-color: #fff;
+                            }
+                            body { 
+                                font-family: 'Courier New', Courier, monospace; 
+                                padding: 2mm 2mm 8mm 2mm; 
+                                font-size: 10px; 
+                                line-height: 1.1; 
+                                color: #000;
+                            }
+                            .header { border-bottom: 2px solid #000; padding-bottom: 3px; margin-bottom: 5px; text-align: center; }
+                            .title { font-weight: bold; font-size: 11px; display: block; }
+                            .reg-id { font-size: 7px; }
+                            .item { margin-bottom: 3px; }
+                            .label { display: block; font-size: 7px; text-transform: uppercase; }
+                            .value { font-weight: bold; font-size: 10px; }
+                            .footer { margin-top: 8px; border-top: 1px dashed #000; padding-top: 4px; font-size: 7px; text-align: center; }
+                            .sig-box { display: flex; justify-content: space-between; margin-top: 10px; }
+                            .sig { border-bottom: 1px solid #000; width: 45%; text-align: center; padding-bottom: 15px; font-size: 7px; }
+                            * { -webkit-print-color-adjust: exact; box-sizing: border-box; }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="header">
+                            <span class="title">PAS ASSISTANT</span>
+                            <span class="title">${title}</span>
+                            <span class="reg-id">ID: ${regId}</span>
+                        </div>
+                        
+                        <div class="item">
+                            <span class="label">Pengunjung:</span>
+                            <span class="value">${data[0].registration?.visitor_name || 'N/A'}</span>
+                        </div>
+                        <div class="item">
+                            <span class="label">Tujuan WBP:</span>
+                            <span class="value">${data[0].registration?.inmate_name || wbpInfo?.nama || 'N/A'}</span>
+                        </div>
+                        <div class="item">
+                            <span class="label">Blok/Kamar:</span>
+                            <span class="value">${blok} / ${kamar}</span>
+                        </div>
+                        
+                        <div class="item" style="border: 1px solid #000; padding: 4px; margin-top: 5px;">
+                            <span class="label">` + (type === 'medicine' ? 'Daftar Obat:' : 'Nominal Titipan:') + `</span>
+                            <span class="value" style="font-size: 13px;">
+                                ` + (type === 'medicine'
+                    ? data.map((m: any) => m.medicine_name + ' (' + m.quantity + ')').join('<br/>')
+                    : 'Rp ' + new Intl.NumberFormat('id-ID').format(data[0].amount)) + `
+                            </span>
+                        </div>
+
+                        ` + (type === 'money' && data[0].notes ? `
+                        <div class="item">
+                            <span class="label">Catatan:</span>
+                            <span class="value" style="font-size: 10px;">` + data[0].notes + `</span>
+                        </div>
+                        ` : '') + `
+
+                        <div class="sig-box">
+                            <div class="sig">Petugas</div>
+                            <div class="sig">Pengunjung</div>
+                        </div>
+
+                        <div class="footer">
+                            ${new Date().toLocaleString('id-ID')}
+                            <br/>*** SEGEL TERPISAH ***
+                        </div>
+                    </body>
+                </html>
+            `);
+            printWindow.document.close();
+            setTimeout(() => {
+                printWindow.print();
+                printWindow.close();
+            }, 500);
+        } catch (error) {
+            alert('Gagal mengambil data untuk dicetak');
+        }
+    };
+
     const filteredRegistrations = registrations.filter(reg => {
         const term = searchTerm.toLowerCase();
         const matchesSearch =
@@ -378,7 +501,7 @@ export default function AdminDashboard() {
                 </div>
 
                 <div className="flex bg-gray-100 p-1 rounded-xl w-full md:w-auto overflow-x-auto">
-                    {['all', 'pending', 'approved', 'rejected', 'management', 'wbp'].map((f) => (
+                    {['all', 'pending', 'approved', 'rejected', 'management', 'wbp', 'medicine'].map((f) => (
                         <button
                             key={f}
                             onClick={() => setFilter(f as any)}
@@ -391,7 +514,8 @@ export default function AdminDashboard() {
                                 f === 'pending' ? 'Tertunda' :
                                     f === 'approved' ? 'Disetujui' :
                                         f === 'rejected' ? 'Ditolak' :
-                                            f === 'management' ? 'Atur Jadwal' : 'Data WBP'}
+                                            f === 'management' ? 'Atur Jadwal' :
+                                                f === 'wbp' ? 'Data WBP' : 'Layanan Obat'}
                         </button>
                     ))}
                 </div>
@@ -401,6 +525,8 @@ export default function AdminDashboard() {
                 <AdminScheduleManager />
             ) : filter === 'wbp' ? (
                 <AdminWBPManager />
+            ) : filter === 'medicine' ? (
+                <DepositDashboard />
             ) : (
                 <>
                     {/* Pagination Controls Top */}
@@ -543,12 +669,46 @@ export default function AdminDashboard() {
                                                     </>
                                                 )}
                                                 {reg.status === 'approved' && (
-                                                    <button
-                                                        onClick={() => handlePrint(reg)}
-                                                        className="w-full bg-blue-600 text-white py-2 rounded-xl flex items-center justify-center gap-2 hover:bg-blue-700 transition-all font-medium shadow-sm hover:shadow-md"
-                                                    >
-                                                        <Printer className="w-4 h-4" /> Cetak Kartu
-                                                    </button>
+                                                    <>
+                                                        <button
+                                                            onClick={() => {
+                                                                setSelectedRegForMedicine(reg.id);
+                                                                setShowMedicineModal(true);
+                                                            }}
+                                                            className="w-full bg-orange-50 text-orange-600 border border-orange-200 py-2 rounded-xl flex items-center justify-center gap-2 hover:bg-orange-100 transition-all font-medium"
+                                                        >
+                                                            <Pill className="w-4 h-4 text-orange-600" /> Titipkan Obat
+                                                        </button>
+                                                        <button
+                                                            onClick={() => {
+                                                                setSelectedRegForMoney(reg.id);
+                                                                setShowMoneyModal(true);
+                                                            }}
+                                                            className="w-full bg-emerald-50 text-emerald-600 border border-emerald-200 py-2 rounded-xl flex items-center justify-center gap-2 hover:bg-emerald-100 transition-all font-medium"
+                                                        >
+                                                            <DollarSign className="w-4 h-4 text-emerald-600" /> Titipkan Uang
+                                                        </button>
+                                                        <div className="grid grid-cols-2 gap-2 mt-2">
+                                                            <button
+                                                                onClick={() => handlePrintSmallSlip(reg.id, 'medicine')}
+                                                                className="py-1 px-2 border border-orange-200 text-orange-600 text-[10px] font-bold rounded-lg hover:bg-orange-50 flex items-center justify-center gap-1"
+                                                            >
+                                                                <Printer className="w-3 h-3" /> Slip Obat
+                                                            </button>
+                                                            <button
+                                                                onClick={() => handlePrintSmallSlip(reg.id, 'money')}
+                                                                className="py-1 px-2 border border-emerald-200 text-emerald-600 text-[10px] font-bold rounded-lg hover:bg-emerald-50 flex items-center justify-center gap-1"
+                                                            >
+                                                                <Printer className="w-3 h-3" /> Slip Uang
+                                                            </button>
+                                                        </div>
+                                                        <button
+                                                            onClick={() => handlePrint(reg)}
+                                                            className="w-full bg-blue-600 text-white py-2 rounded-xl flex items-center justify-center gap-2 hover:bg-blue-700 transition-all font-medium shadow-sm hover:shadow-md"
+                                                        >
+                                                            <Printer className="w-4 h-4" /> Cetak Kartu
+                                                        </button>
+                                                    </>
                                                 )}
                                                 {reg.status !== 'pending' && (
                                                     <button
@@ -597,6 +757,32 @@ export default function AdminDashboard() {
                         </div>
                     )}
                 </>
+            )}
+
+            {showMedicineModal && selectedRegForMedicine && (
+                <MedicineEntryModal
+                    registrationId={selectedRegForMedicine}
+                    onClose={() => {
+                        setShowMedicineModal(false);
+                        setSelectedRegForMedicine(null);
+                    }}
+                    onSuccess={() => {
+                        alert('Data obat berhasil ditambahkan!');
+                    }}
+                />
+            )}
+
+            {showMoneyModal && selectedRegForMoney && (
+                <MoneyEntryModal
+                    registrationId={selectedRegForMoney}
+                    onClose={() => {
+                        setShowMoneyModal(false);
+                        setSelectedRegForMoney(null);
+                    }}
+                    onSuccess={() => {
+                        alert('Data uang berhasil ditambahkan!');
+                    }}
+                />
             )}
         </div>
     );
