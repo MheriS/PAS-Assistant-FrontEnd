@@ -19,6 +19,8 @@ export default function ChatAssistant() {
         },
     ]);
     const [input, setInput] = useState('');
+    const [isThinking, setIsThinking] = useState(false);
+    const [isTyping, setIsTyping] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     const scrollToBottom = () => {
@@ -27,11 +29,11 @@ export default function ChatAssistant() {
 
     useEffect(() => {
         scrollToBottom();
-    }, [messages]);
+    }, [messages, isThinking, isTyping]);
 
 
     const handleSend = async () => {
-        if (!input.trim()) return;
+        if (!input.trim() || isThinking || isTyping) return;
 
         const userMessage: Message = {
             id: Date.now().toString(),
@@ -43,6 +45,7 @@ export default function ChatAssistant() {
         setMessages((prev) => [...prev, userMessage]);
         const currentInput = input;
         setInput('');
+        setIsThinking(true);
 
         try {
             const response = await fetch('http://localhost:8000/api/chatbot', {
@@ -53,15 +56,27 @@ export default function ChatAssistant() {
 
             const data = await response.json();
 
-            const assistantMessage: Message = {
-                id: (Date.now() + 1).toString(),
-                text: data.response || 'Maaf, saya sedang tidak dapat merespon.',
-                sender: 'assistant',
-                timestamp: new Date(),
-            };
-            setMessages((prev) => [...prev, assistantMessage]);
+            setIsThinking(false);
+            setIsTyping(true);
+
+            // Simulate typing delay based on message length
+            const typingTime = Math.min(Math.max(data.response?.length * 20, 1000), 3000);
+
+            setTimeout(() => {
+                const assistantMessage: Message = {
+                    id: (Date.now() + 1).toString(),
+                    text: data.response || 'Maaf, saya sedang tidak dapat merespon.',
+                    sender: 'assistant',
+                    timestamp: new Date(),
+                };
+                setMessages((prev) => [...prev, assistantMessage]);
+                setIsTyping(false);
+            }, typingTime);
+
         } catch (error) {
             console.error('Error calling chatbot API:', error);
+            setIsThinking(false);
+            setIsTyping(false);
             const errorMessage: Message = {
                 id: (Date.now() + 1).toString(),
                 text: 'Maaf, terjadi kesalahan koneksi ke server chatbot.',
@@ -128,6 +143,34 @@ export default function ChatAssistant() {
                         </div>
                     </div>
                 ))}
+                {isThinking && (
+                    <div className="flex gap-3 flex-row">
+                        <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 bg-gray-200">
+                            <Bot className="w-5 h-5 text-gray-700" />
+                        </div>
+                        <div className="bg-gray-100 p-3 rounded-lg flex items-center gap-1">
+                            <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                            <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                            <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce"></div>
+                            <span className="text-[10px] text-gray-500 ml-2 italic">Memikirkan...</span>
+                        </div>
+                    </div>
+                )}
+
+                {isTyping && (
+                    <div className="flex gap-3 flex-row">
+                        <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 bg-gray-200">
+                            <Bot className="w-5 h-5 text-gray-700" />
+                        </div>
+                        <div className="bg-gray-100 p-3 rounded-lg flex items-center gap-1">
+                            <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                            <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                            <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce"></div>
+                            <span className="text-[10px] text-gray-500 ml-2 italic">Mengetik...</span>
+                        </div>
+                    </div>
+                )}
+
                 <div ref={messagesEndRef} />
             </div>
 
