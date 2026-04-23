@@ -22,6 +22,8 @@ interface MedicineDelivery {
     created_at: string;
 }
 
+import { API_BASE_URL } from '../config';
+
 export default function MedicineAdminDashboard() {
     const [deliveries, setDeliveries] = useState<MedicineDelivery[]>([]);
     const [type, setType] = useState<'all' | 'waiting' | 'approved' | 'delivered'>('waiting');
@@ -32,7 +34,7 @@ export default function MedicineAdminDashboard() {
     const fetchDeliveries = async () => {
         setLoading(true);
         try {
-            const response = await fetch(`http://localhost:8000/api/medicine-deliveries?${type !== 'all' ? (type === 'waiting' ? 'approval_status=waiting' : (type === 'delivered' ? 'delivery_status=delivered' : 'approval_status=approved&delivery_status=pending')) : ''}`);
+            const response = await fetch(`${API_BASE_URL}/medicine-deliveries?${type !== 'all' ? (type === 'waiting' ? 'approval_status=waiting' : (type === 'delivered' ? 'delivery_status=delivered' : 'approval_status=approved&delivery_status=pending')) : ''}`);
             const data = await response.json();
             setDeliveries(data);
         } catch (error) {
@@ -53,7 +55,7 @@ export default function MedicineAdminDashboard() {
         }
 
         try {
-            await fetch(`http://localhost:8000/api/medicine-deliveries/${id}/approval`, {
+            await fetch(`${API_BASE_URL}/medicine-deliveries/${id}/approval`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -71,7 +73,7 @@ export default function MedicineAdminDashboard() {
 
     const handleDelivery = async (id: number) => {
         try {
-            await fetch(`http://localhost:8000/api/medicine-deliveries/${id}/delivery`, {
+            await fetch(`${API_BASE_URL}/medicine-deliveries/${id}/delivery`, {
                 method: 'PATCH'
             });
             fetchDeliveries();

@@ -5,6 +5,8 @@ interface AdminLoginProps {
     onLogin: (status: boolean) => void;
 }
 
+import { API_BASE_URL } from '../config';
+
 export default function AdminLogin({ onLogin }: AdminLoginProps) {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
@@ -17,7 +19,7 @@ export default function AdminLogin({ onLogin }: AdminLoginProps) {
         setError('');
 
         try {
-            const response = await fetch('http://localhost:8000/api/login', {
+            const response = await fetch(`${API_BASE_URL}/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ username, password }),

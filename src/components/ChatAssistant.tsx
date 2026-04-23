@@ -8,6 +8,7 @@ interface Message {
     timestamp: Date;
 }
 
+import { API_BASE_URL } from '../config';
 
 export default function ChatAssistant() {
     const [messages, setMessages] = useState<Message[]>([
@@ -48,7 +49,7 @@ export default function ChatAssistant() {
         setIsThinking(true);
 
         try {
-            const response = await fetch('http://localhost:8000/api/chatbot', {
+            const response = await fetch(`${API_BASE_URL}/chatbot`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ message: currentInput }),

@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Users, Calendar, CheckCircle, Clock } from 'lucide-react';
 
+import { API_BASE_URL } from '../config';
+
 export default function DashboardStats() {
     const [statsData, setStatsData] = useState({
         total: 0,
@@ -12,7 +14,7 @@ export default function DashboardStats() {
     useEffect(() => {
         const fetchStats = async () => {
             try {
-                const response = await fetch('http://localhost:8000/api/dashboard/stats');
+                const response = await fetch(`${API_BASE_URL}/dashboard/stats`);
                 const data = await response.json();
                 setStatsData(data);
             } catch (error) {

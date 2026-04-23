@@ -13,6 +13,8 @@ interface MedicineItem {
     dosage: string;
 }
 
+import { API_BASE_URL } from '../config';
+
 export default function MedicineEntryModal({ registrationId, onClose, onSuccess }: MedicineEntryModalProps) {
     const [medicines, setMedicines] = useState<MedicineItem[]>([{ name: '', quantity: '', dosage: '' }]);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -44,7 +46,7 @@ export default function MedicineEntryModal({ registrationId, onClose, onSuccess 
         setIsSubmitting(true);
         try {
             const promises = medicines.filter(m => m.name.trim()).map(async (m) => {
-                const res = await fetch('http://localhost:8000/api/medicine-deliveries', {
+                const res = await fetch(`${API_BASE_URL}/medicine-deliveries`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({

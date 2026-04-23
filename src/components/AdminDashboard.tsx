@@ -6,6 +6,7 @@ import AdminWBPManager from './AdminWBPManager';
 import DepositDashboard from './DepositDashboard';
 import MedicineEntryModal from './MedicineEntryModal';
 import MoneyEntryModal from './MoneyEntryModal';
+import { API_BASE_URL } from '../config';
 
 export default function AdminDashboard() {
     const [registrations, setRegistrations] = useState<RegistrationRecord[]>([]);
@@ -340,8 +341,8 @@ export default function AdminDashboard() {
 
     const handlePrintSmallSlip = async (regId: string, type: 'medicine' | 'money') => {
         const url = type === 'medicine'
-            ? `http://localhost:8000/api/medicine-deliveries?registration_id=${regId}`
-            : `http://localhost:8000/api/money-deposits?registration_id=${regId}`;
+            ? `${API_BASE_URL}/medicine-deliveries?registration_id=${regId}`
+            : `${API_BASE_URL}/money-deposits?registration_id=${regId}`;
 
         try {
             const response = await fetch(url);

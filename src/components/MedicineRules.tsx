@@ -8,6 +8,8 @@ interface MedicineRule {
     is_prohibited: boolean;
 }
 
+import { API_BASE_URL } from '../config';
+
 export default function MedicineRules() {
     const [rules, setRules] = useState<MedicineRule[]>([]);
     const [loading, setLoading] = useState(true);
@@ -15,7 +17,7 @@ export default function MedicineRules() {
     useEffect(() => {
         // In a real app, this would fetch from the API we created
         // For now, I'll provide a fallback or fetch if the API is ready
-        fetch('http://localhost:8000/api/medicine-deliveries/rules')
+        fetch(`${API_BASE_URL}/medicine-deliveries/rules`)
             .then(res => res.json())
             .then(data => {
                 setRules(data);
@@ -49,8 +51,8 @@ export default function MedicineRules() {
                         <div
                             key={rule.id}
                             className={`p-4 rounded-xl border flex gap-3 ${rule.is_prohibited
-                                    ? 'bg-red-50 border-red-100'
-                                    : 'bg-emerald-50 border-emerald-100'
+                                ? 'bg-red-50 border-red-100'
+                                : 'bg-emerald-50 border-emerald-100'
                                 }`}
                         >
                             {rule.is_prohibited ? (

@@ -26,6 +26,8 @@ interface MoneyDeposit {
     created_at: string;
 }
 
+import { API_BASE_URL } from '../config';
+
 export default function DepositDashboard() {
     const [activeTab, setActiveTab] = useState<'medicine' | 'money'>('medicine');
     const [medicines, setMedicines] = useState<MedicineDelivery[]>([]);
@@ -39,11 +41,11 @@ export default function DepositDashboard() {
         setLoading(true);
         try {
             if (activeTab === 'medicine') {
-                const url = `http://localhost:8000/api/medicine-deliveries?${type !== 'all' ? (type === 'waiting' ? 'approval_status=waiting' : (type === 'delivered' ? 'delivery_status=delivered' : 'approval_status=approved&delivery_status=pending')) : ''}`;
+                const url = `${API_BASE_URL}/medicine-deliveries?${type !== 'all' ? (type === 'waiting' ? 'approval_status=waiting' : (type === 'delivered' ? 'delivery_status=delivered' : 'approval_status=approved&delivery_status=pending')) : ''}`;
                 const response = await fetch(url);
                 setMedicines(await response.json());
             } else {
-                const url = `http://localhost:8000/api/money-deposits?${type !== 'all' ? `status=${type}` : ''}`;
+                const url = `${API_BASE_URL}/money-deposits?${type !== 'all' ? `status=${type}` : ''}`;
                 const response = await fetch(url);
                 setMoney(await response.json());
             }
@@ -64,7 +66,7 @@ export default function DepositDashboard() {
             return;
         }
         try {
-            await fetch(`http://localhost:8000/api/medicine-deliveries/${id}/approval`, {
+            await fetch(`${API_BASE_URL}/medicine-deliveries/${id}/approval`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ approval_status: status, rejection_reason: rejectionReason })
@@ -77,14 +79,14 @@ export default function DepositDashboard() {
 
     const handleMedicineDelivery = async (id: number) => {
         try {
-            await fetch(`http://localhost:8000/api/medicine-deliveries/${id}/delivery`, { method: 'PATCH' });
+            await fetch(`${API_BASE_URL}/medicine-deliveries/${id}/delivery`, { method: 'PATCH' });
             fetchData();
         } catch (error) { alert('Gagal memperbarui status penyerahan'); }
     };
 
     const handleMoneyDelivery = async (id: number) => {
         try {
-            await fetch(`http://localhost:8000/api/money-deposits/${id}/status`, {
+            await fetch(`${API_BASE_URL}/money-deposits/${id}/status`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ status: 'delivered' })
@@ -162,7 +164,7 @@ export default function DepositDashboard() {
                                     </div>
                                 </div>
                                 <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase ${(item.approval_status === 'approved' || item.status === 'delivered' || item.delivery_status === 'delivered') ? 'bg-emerald-100 text-emerald-700' :
-                                        item.approval_status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'
+                                    item.approval_status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'
                                     }`}>
                                     {activeTab === 'medicine' ? item.approval_status : item.status}
                                 </span>

@@ -10,6 +10,8 @@ interface Visit {
     status: 'approved' | 'pending' | 'rejected';
 }
 
+import { API_BASE_URL } from '../config';
+
 export default function VisitSchedule() {
     const [visits, setVisits] = useState<Visit[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -19,7 +21,7 @@ export default function VisitSchedule() {
     useEffect(() => {
         const fetchSchedule = async () => {
             try {
-                const response = await fetch(`http://localhost:8000/api/registrations/schedule/upcoming`);
+                const response = await fetch(`${API_BASE_URL}/registrations/schedule/upcoming`);
                 const data = await response.json();
 
                 const mappedVisits = data.map((item: any) => ({

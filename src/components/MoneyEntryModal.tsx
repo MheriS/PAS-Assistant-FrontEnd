@@ -7,6 +7,8 @@ interface MoneyEntryModalProps {
     onSuccess: () => void;
 }
 
+import { API_BASE_URL } from '../config';
+
 export default function MoneyEntryModal({ registrationId, onClose, onSuccess }: MoneyEntryModalProps) {
     const [formData, setFormData] = useState({
         amount: '',
@@ -18,7 +20,7 @@ export default function MoneyEntryModal({ registrationId, onClose, onSuccess }: 
         e.preventDefault();
         setIsSubmitting(true);
         try {
-            const response = await fetch('http://localhost:8000/api/money-deposits', {
+            const response = await fetch(`${API_BASE_URL}/money-deposits`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

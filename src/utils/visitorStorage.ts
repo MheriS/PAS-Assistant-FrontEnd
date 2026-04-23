@@ -1,7 +1,4 @@
-// Visitor data storage utility
-// Menggunakan Laravel Backend API untuk menyimpan data pengunjung
-
-const API_BASE_URL = 'http://localhost:8000/api';
+import { API_BASE_URL } from '../config';
 
 export interface VisitorData {
     nik: string;
