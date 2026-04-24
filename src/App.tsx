@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Building2, MessageSquare, FileText, BarChart3, Menu, X, Shield, LogOut, CheckCircle2, ArrowRight } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Building2, MessageSquare, FileText, BarChart3, Menu, X, Shield, LogOut, CheckCircle2, ArrowRight, Mail, Phone, ExternalLink, ShieldCheck } from 'lucide-react';
 import ChatAssistant from './components/ChatAssistant';
 import RegistrationForm from './components/RegistrationForm';
 import InfoPanel from './components/InfoPanel';
@@ -7,7 +7,7 @@ import DashboardStats from './components/DashboardStats';
 import VisitSchedule from './components/VisitSchedule';
 import AdminLogin from './components/AdminLogin';
 import AdminDashboard from './components/AdminDashboard';
-import { getRegistrationsByNIK, type RegistrationRecord } from './utils/registrationStorage';
+import { getRegistrationsByNIK, getAllVisitSlots, type RegistrationRecord } from './utils/registrationStorage';
 
 type Tab = 'dashboard' | 'registration' | 'chat' | 'info' | 'admin' | 'status';
 
@@ -17,6 +17,41 @@ export default function App() {
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(localStorage.getItem('is_admin_logged_in') === 'true');
   const [statusNik, setStatusNik] = useState('');
   const [visitorRegistrations, setVisitorRegistrations] = useState<RegistrationRecord[]>([]);
+  const [dynamicSchedule, setDynamicSchedule] = useState<{ day: string, time: string, color: string }[]>([]);
+
+  useEffect(() => {
+    const fetchDynamicSchedule = async () => {
+      try {
+        const slots = await getAllVisitSlots();
+        if (slots.length > 0) {
+          const dayMap: Record<string, { start: string, end: string }> = {};
+          const daysOrder = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+
+          // Filter slots for future or today, and group by day name
+          const today = new Date().toISOString().split('T')[0];
+          slots.filter(s => s.is_available && s.date >= today).forEach(slot => {
+            const date = new Date(slot.date);
+            const dayName = daysOrder[date.getDay()];
+            // Take the first session found for that day name as standard
+            if (!dayMap[dayName]) {
+              dayMap[dayName] = { start: slot.start_time, end: slot.end_time };
+            }
+          });
+
+          const schedule = Object.entries(dayMap).map(([day, times]) => ({
+            day,
+            time: `${times.start.substring(0, 5)} - ${times.end.substring(0, 5)}`,
+            color: day === 'Selasa' ? 'blue' : day === 'Kamis' ? 'emerald' : 'indigo'
+          })).sort((a, b) => daysOrder.indexOf(a.day) - daysOrder.indexOf(b.day));
+
+          if (schedule.length > 0) setDynamicSchedule(schedule);
+        }
+      } catch (error) {
+        console.error('Error processing dynamic schedule:', error);
+      }
+    };
+    fetchDynamicSchedule();
+  }, []);
 
   const handleAdminLogin = (status: boolean) => {
     setIsAdminLoggedIn(status);
@@ -308,53 +343,122 @@ export default function App() {
         )}
       </main>
 
-      <footer className="bg-gradient-to-br from-gray-900 to-gray-800 mt-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
-            <div>
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-emerald-500 rounded-lg flex items-center justify-center">
+      <footer className="bg-gray-950 text-gray-300 mt-20 border-t border-gray-800">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
+            {/* Branding */}
+            <div className="space-y-6">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-900/20">
                   <Building2 className="w-6 h-6 text-white" />
                 </div>
-                <h3 className="text-white font-bold text-lg">PAS-Assistant</h3>
+                <div>
+                  <h3 className="text-white font-black text-xl tracking-tight leading-none">PAS-Assistant</h3>
+                  <p className="text-[10px] text-blue-400 font-black uppercase tracking-widest mt-1">Lapas Pamekasan</p>
+                </div>
               </div>
-              <p className="text-gray-400 text-sm leading-relaxed">
-                Sistem layanan kunjungan terpadu berbasis AI untuk Lapas Narkotika IIA Pamekasan
+              <p className="text-sm text-gray-400 leading-relaxed font-medium">
+                Solusi digital terpadu untuk kemudahan layanan kunjungan dan informasi Warga Binaan Lapas Narkotika IIA Pamekasan.
               </p>
-            </div>
-            <div>
-              <h4 className="text-white font-semibold mb-4">Kontak</h4>
-              <div className="space-y-3 text-sm text-gray-400">
-                <p className="flex items-center gap-2">
-                  <span className="text-blue-400">📞</span> (0324) 322xxx
-                </p>
-                <p className="flex items-center gap-2">
-                  <span className="text-blue-400">✉️</span> lapas.pamekasan@kemenkumham.go.id
-                </p>
+              <div className="flex items-center gap-4 pt-2">
+                <a href="#" className="w-9 h-9 bg-gray-900 rounded-xl flex items-center justify-center hover:bg-blue-600 transition-colors group">
+                  <ShieldCheck className="w-5 h-5 text-gray-500 group-hover:text-white" />
+                </a>
+                <a href="#" className="w-9 h-9 bg-gray-900 rounded-xl flex items-center justify-center hover:bg-blue-600 transition-colors group">
+                  <ExternalLink className="w-5 h-5 text-gray-500 group-hover:text-white" />
+                </a>
               </div>
             </div>
+
+            {/* Quick Links */}
             <div>
-              <h4 className="text-white font-semibold mb-4">Jam Operasional</h4>
-              <div className="space-y-2 text-sm text-gray-400">
-                <p className="flex justify-between">
-                  <span>Senin - Kamis:</span>
-                  <span className="text-gray-300">09:00 - 14:00</span>
-                </p>
-                <p className="flex justify-between">
-                  <span>Jumat:</span>
-                  <span className="text-gray-300">09:00 - 11:00</span>
-                </p>
-                <p className="flex justify-between">
-                  <span>Sabtu - Minggu:</span>
-                  <span className="text-gray-300">09:00 - 15:00</span>
-                </p>
+              <h4 className="text-white font-black text-sm uppercase tracking-widest mb-6">Navigasi Cepat</h4>
+              <ul className="space-y-4">
+                {tabs.filter(t => t.id !== 'admin').map((tab) => (
+                  <li key={tab.id}>
+                    <button
+                      onClick={() => setActiveTab(tab.id)}
+                      className="text-sm font-bold text-gray-500 hover:text-blue-400 flex items-center gap-2 transition-colors"
+                    >
+                      <ArrowRight className="w-3 h-3" /> {tab.label}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Contact */}
+            <div>
+              <h4 className="text-white font-black text-sm uppercase tracking-widest mb-6">Hubungi Kami</h4>
+              <div className="space-y-5">
+                <div className="flex items-start gap-4">
+                  <div className="w-8 h-8 bg-gray-900 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Phone className="w-4 h-4 text-blue-500" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-0.5">Telepon</p>
+                    <p className="text-sm font-bold text-gray-300">(0324) 322xxx</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-4">
+                  <div className="w-8 h-8 bg-gray-900 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Mail className="w-4 h-4 text-emerald-500" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-0.5">Email Resmi</p>
+                    <p className="text-sm font-bold text-gray-300 break-all">lapas.pamekasan@kemenkumham.go.id</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Op Hours */}
+            <div>
+              <h4 className="text-white font-black text-sm uppercase tracking-widest mb-6">Jam Operasional</h4>
+              <div className="bg-gray-900/50 rounded-2xl p-5 border border-gray-800/50 space-y-4">
+                {dynamicSchedule.length > 0 ? (
+                  dynamicSchedule.map((item, index) => (
+                    <div key={index} className={`flex justify-between items-center ${index !== dynamicSchedule.length - 1 ? 'border-b border-gray-800 pb-3' : ''}`}>
+                      <div className="flex items-center gap-2">
+                        <div className={`w-2 h-2 rounded-full ${item.color === 'blue' ? 'bg-blue-500' : item.color === 'emerald' ? 'bg-emerald-500' : 'bg-indigo-500'}`}></div>
+                        <span className="text-sm font-bold text-gray-400">{item.day}</span>
+                      </div>
+                      <span className={`text-xs font-black text-white px-2 py-1 rounded-md ${item.color === 'blue' ? 'bg-blue-600/20' : item.color === 'emerald' ? 'bg-emerald-600/20' : 'bg-indigo-600/20'}`}>
+                        {item.time}
+                      </span>
+                    </div>
+                  ))
+                ) : (
+                  <>
+                    <div className="flex justify-between items-center border-b border-gray-800 pb-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                        <span className="text-sm font-bold text-gray-400">Selasa</span>
+                      </div>
+                      <span className="text-xs font-black text-white bg-blue-600/20 px-2 py-1 rounded-md">08:00 - 11:00</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
+                        <span className="text-sm font-bold text-gray-400">Kamis</span>
+                      </div>
+                      <span className="text-xs font-black text-white bg-emerald-600/20 px-2 py-1 rounded-md">08:00 - 11:00</span>
+                    </div>
+                  </>
+                )}
+                <p className="text-[10px] text-gray-500 italic mt-2">* Hari lain libur layanan kunjungan</p>
               </div>
             </div>
           </div>
-          <div className="pt-8 border-t border-gray-700 text-center">
-            <p className="text-gray-400 text-sm">
-              &copy; 2026 Lapas Narkotika IIA Pamekasan. Kementerian Hukum dan HAM Republik Indonesia.
+
+          <div className="pt-8 border-t border-gray-900 grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+            <p className="text-gray-500 text-xs font-medium text-center md:text-left">
+              &copy; 2026 Lapas Narkotika IIA Pamekasan. Kemenkumham RI.
             </p>
+            <div className="flex justify-center md:justify-end gap-6">
+              <span className="text-[10px] font-black text-gray-600 uppercase tracking-tighter">Privacy Policy</span>
+              <span className="text-[10px] font-black text-gray-600 uppercase tracking-tighter">Terms of Service</span>
+            </div>
           </div>
         </div>
       </footer>
