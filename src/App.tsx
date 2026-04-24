@@ -7,7 +7,7 @@ import DashboardStats from './components/DashboardStats';
 import VisitSchedule from './components/VisitSchedule';
 import AdminLogin from './components/AdminLogin';
 import AdminDashboard from './components/AdminDashboard';
-import { getRegistrationsByNIK, getAllVisitSlots, type RegistrationRecord } from './utils/registrationStorage';
+import { getRegistrationsByNIK, getAllVisitSlots, getAllRecurringSlots, type RegistrationRecord } from './utils/registrationStorage';
 
 type Tab = 'dashboard' | 'registration' | 'chat' | 'info' | 'admin' | 'status';
 
@@ -22,29 +22,39 @@ export default function App() {
   useEffect(() => {
     const fetchDynamicSchedule = async () => {
       try {
-        const slots = await getAllVisitSlots();
-        if (slots.length > 0) {
-          const dayMap: Record<string, { start: string, end: string }> = {};
-          const daysOrder = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+        const [slots, recurring] = await Promise.all([
+          getAllVisitSlots(),
+          getAllRecurringSlots()
+        ]);
 
-          // Filter slots for future or today, and group by day name
-          const today = new Date().toISOString().split('T')[0];
-          slots.filter(s => s.is_available && s.date >= today).forEach(slot => {
-            const date = new Date(slot.date);
-            const dayName = daysOrder[date.getDay()];
-            // Take the first session found for that day name as standard
-            if (!dayMap[dayName]) {
-              dayMap[dayName] = { start: slot.start_time, end: slot.end_time };
-            }
-          });
+        const dayMap: Record<string, { start: string, end: string }> = {};
+        const daysOrder = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
 
-          const schedule = Object.entries(dayMap).map(([day, times]) => ({
-            day,
-            time: `${times.start.substring(0, 5)} - ${times.end.substring(0, 5)}`,
-            color: day === 'Selasa' ? 'blue' : day === 'Kamis' ? 'emerald' : 'indigo'
-          })).sort((a, b) => daysOrder.indexOf(a.day) - daysOrder.indexOf(b.day));
+        // 1. Process Recurring Slots (Base Schedule)
+        recurring.filter(r => r.is_active).forEach(rule => {
+          const dayName = daysOrder[rule.day_of_week];
+          if (!dayMap[dayName]) {
+            dayMap[dayName] = { start: rule.start_time, end: rule.end_time };
+          }
+        });
 
-          if (schedule.length > 0) setDynamicSchedule(schedule);
+        // 2. Process Specific Slots (Overrides/Additional)
+        const today = new Date().toISOString().split('T')[0];
+        slots.filter(s => s.is_available && s.date >= today).forEach(slot => {
+          const date = new Date(slot.date);
+          const dayName = daysOrder[date.getDay()];
+          // specific slots override or add to recurring
+          dayMap[dayName] = { start: slot.start_time, end: slot.end_time };
+        });
+
+        const schedule = Object.entries(dayMap).map(([day, times]) => ({
+          day,
+          time: `${times.start.substring(0, 5)} - ${times.end.substring(0, 5)}`,
+          color: day === 'Selasa' ? 'blue' : day === 'Kamis' ? 'emerald' : 'indigo'
+        })).sort((a, b) => daysOrder.indexOf(a.day) - daysOrder.indexOf(b.day));
+
+        if (schedule.length > 0) {
+          setDynamicSchedule(schedule);
         }
       } catch (error) {
         console.error('Error processing dynamic schedule:', error);

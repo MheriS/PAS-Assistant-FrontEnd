@@ -235,3 +235,64 @@ export async function toggleVisitSlotAvailability(id: number): Promise<void> {
         console.error('Error toggling visit slot:', error);
     }
 }
+
+// Recurring Visit Slot Management
+export interface RecurringVisitSlot {
+    id: number;
+    day_of_week: number;
+    session_name?: string;
+    start_time: string;
+    end_time: string;
+    max_visitors: number;
+    is_active: boolean;
+}
+
+export async function getAllRecurringSlots(): Promise<RecurringVisitSlot[]> {
+    try {
+        const response = await fetch(`${API_BASE_URL}/recurring-visit-slots`);
+        return await response.json();
+    } catch (error) {
+        console.error('Error fetching recurring slots:', error);
+        return [];
+    }
+}
+
+export async function createRecurringSlot(data: {
+    day_of_week: number,
+    session_name?: string,
+    start_time: string,
+    end_time: string,
+    max_visitors?: number
+}): Promise<void> {
+    try {
+        await fetch(`${API_BASE_URL}/recurring-visit-slots`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data),
+        });
+    } catch (error) {
+        console.error('Error creating recurring slot:', error);
+    }
+}
+
+export async function updateRecurringSlot(id: number, data: Partial<RecurringVisitSlot>): Promise<void> {
+    try {
+        await fetch(`${API_BASE_URL}/recurring-visit-slots/${id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data),
+        });
+    } catch (error) {
+        console.error('Error updating recurring slot:', error);
+    }
+}
+
+export async function deleteRecurringSlot(id: number): Promise<void> {
+    try {
+        await fetch(`${API_BASE_URL}/recurring-visit-slots/${id}`, {
+            method: 'DELETE',
+        });
+    } catch (error) {
+        console.error('Error deleting recurring slot:', error);
+    }
+}
