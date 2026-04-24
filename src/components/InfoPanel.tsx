@@ -1,4 +1,4 @@
-import { Clock, MapPin, Phone, Mail, AlertCircle, CheckCircle, XCircle, ShieldAlert, Smartphone, Waves, BoxSelect, Info, Building2 } from 'lucide-react';
+import { Clock, MapPin, Phone, Mail, CheckCircle, XCircle, ShieldAlert, Waves, BoxSelect, Info, Building2 } from 'lucide-react';
 
 export default function InfoPanel() {
     const forbiddenFoods = [
