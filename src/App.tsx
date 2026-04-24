@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Building2, MessageSquare, FileText, BarChart3, Menu, X, Shield, LogOut, CheckCircle2 } from 'lucide-react';
+import { Building2, MessageSquare, FileText, BarChart3, Menu, X, Shield, LogOut, CheckCircle2, ArrowRight } from 'lucide-react';
 import ChatAssistant from './components/ChatAssistant';
 import RegistrationForm from './components/RegistrationForm';
 import InfoPanel from './components/InfoPanel';
@@ -84,60 +84,98 @@ export default function App() {
             </nav>
 
             <div className="flex items-center gap-3">
-              <div className="hidden md:block h-8 w-[1px] bg-gray-200 mx-1"></div>
-              <button
-                onClick={() => setActiveTab('admin')}
-                className={`flex items-center gap-2.5 px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'admin'
-                  ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-xl shadow-blue-500/20'
-                  : 'text-gray-600 hover:bg-gray-100'
-                  }`}
-              >
-                <Shield className="w-5 h-5" />
-                <span className="hidden lg:block">{isAdminLoggedIn ? 'Admin Panel' : 'Admin'}</span>
-              </button>
+              <div className="hidden md:flex items-center gap-3">
+                <div className="h-8 w-[1px] bg-gray-200 mx-1"></div>
+                <button
+                  onClick={() => setActiveTab('admin')}
+                  className={`flex items-center gap-2.5 px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'admin'
+                    ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-xl shadow-blue-500/20'
+                    : 'text-gray-600 hover:bg-gray-100'
+                    }`}
+                >
+                  <Shield className="w-5 h-5" />
+                  <span className="hidden lg:block">{isAdminLoggedIn ? 'Admin Panel' : 'Admin'}</span>
+                </button>
 
-              {isAdminLoggedIn ? (
-                <button
-                  onClick={handleAdminLogout}
-                  className="p-2 text-red-500 hover:bg-red-50 rounded-xl transition-all"
-                  title="Logout"
-                >
-                  <LogOut className="w-5 h-5" />
-                </button>
-              ) : (
-                <button
-                  onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                  className="md:hidden p-2.5 rounded-xl hover:bg-gray-100"
-                >
-                  {mobileMenuOpen ? <X className="w-6 h-6 text-gray-600" /> : <Menu className="w-6 h-6 text-gray-600" />}
-                </button>
-              )}
+                {isAdminLoggedIn && (
+                  <button
+                    onClick={handleAdminLogout}
+                    className="p-2 text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                    title="Logout"
+                  >
+                    <LogOut className="w-5 h-5" />
+                  </button>
+                )}
+              </div>
+
+              {/* Always show Menu Trigger on Mobile */}
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="md:hidden p-2.5 rounded-xl hover:bg-gray-100 flex items-center justify-center bg-gray-50 border border-gray-200"
+                aria-label="Toggle Menu"
+              >
+                {mobileMenuOpen ? <X className="w-6 h-6 text-gray-600" /> : <Menu className="w-6 h-6 text-gray-600" />}
+              </button>
             </div>
           </div>
         </div>
 
         {mobileMenuOpen && (
-          <nav className="md:hidden py-4 px-4 border-t border-gray-100 bg-white shadow-xl animate-in slide-in-from-top-4 duration-300">
-            <div className="grid grid-cols-2 gap-3">
-              {tabs.map((tab) => {
-                const Icon = tab.icon;
-                return (
+          <nav className="md:hidden py-6 px-4 border-t border-gray-100 bg-white shadow-2xl animate-in slide-in-from-top-4 duration-300">
+            <div className="flex flex-col gap-3">
+              <div className="grid grid-cols-2 gap-3 mb-3">
+                {tabs.filter(t => t.id !== 'admin').map((tab) => {
+                  const Icon = tab.icon;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => {
+                        setActiveTab(tab.id);
+                        setMobileMenuOpen(false);
+                      }}
+                      className={`flex flex-col items-center justify-center gap-2 px-3 py-4 rounded-2xl text-xs font-bold transition-all ${activeTab === tab.id
+                        ? 'bg-blue-600 text-white shadow-lg'
+                        : 'bg-gray-50 text-gray-600 border border-gray-100'
+                        }`}
+                    >
+                      <Icon className="w-6 h-6 mb-1" />
+                      {tab.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="pt-3 border-t border-gray-100 space-y-3">
+                <button
+                  onClick={() => {
+                    setActiveTab('admin');
+                    setMobileMenuOpen(false);
+                  }}
+                  className={`flex items-center justify-between w-full px-5 py-4 rounded-2xl font-bold transition-all ${activeTab === 'admin'
+                    ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white'
+                    : 'bg-gray-50 text-gray-600 border border-gray-100'
+                    }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <Shield className="w-5 h-5" />
+                    {isAdminLoggedIn ? 'Admin Panel' : 'Admin Login'}
+                  </div>
+                  <ArrowRight className="w-5 h-5 opacity-50" />
+                </button>
+
+                {isAdminLoggedIn && (
                   <button
-                    key={tab.id}
                     onClick={() => {
-                      setActiveTab(tab.id);
+                      handleAdminLogout();
                       setMobileMenuOpen(false);
                     }}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all ${activeTab === tab.id
-                      ? 'bg-blue-600 text-white shadow-lg'
-                      : 'bg-gray-50 text-gray-600'
-                      }`}
+                    className="flex items-center justify-center gap-2 w-full px-5 py-4 rounded-2xl bg-red-50 text-red-600 font-bold border border-red-100 shadow-sm"
                   >
-                    <Icon className="w-5 h-5" />
-                    {tab.label}
+                    <LogOut className="w-5 h-5" />
+                    Keluar (Logout)
                   </button>
-                );
-              })}
+                )}
+              </div>
             </div>
           </nav>
         )}
@@ -147,8 +185,8 @@ export default function App() {
         {activeTab === 'dashboard' && (
           <div>
             <div className="mb-8">
-              <h2 className="text-gray-900 mb-2">Dashboard Monitoring</h2>
-              <p className="text-gray-600">
+              <h2 className="text-2xl font-black text-gray-900 mb-2 tracking-tight">Dashboard Monitoring</h2>
+              <p className="text-gray-600 font-medium">
                 Pantau statistik dan jadwal kunjungan Lapas Narkotika IIA Pamekasan
               </p>
             </div>
@@ -160,8 +198,8 @@ export default function App() {
         {activeTab === 'status' && (
           <div className="max-w-4xl mx-auto">
             <div className="mb-8">
-              <h2 className="text-gray-900 mb-2">Cek Status Pendaftaran</h2>
-              <p className="text-gray-600">
+              <h2 className="text-2xl font-black text-gray-900 mb-2 tracking-tight">Cek Status Pendaftaran</h2>
+              <p className="text-gray-600 font-medium">
                 Masukkan NIK Anda untuk melihat status pendaftaran kunjungan
               </p>
             </div>
@@ -234,8 +272,8 @@ export default function App() {
         {activeTab === 'registration' && (
           <div>
             <div className="mb-8">
-              <h2 className="text-gray-900 mb-2">Pendaftaran Kunjungan</h2>
-              <p className="text-gray-600">
+              <h2 className="text-2xl font-black text-gray-900 mb-2 tracking-tight">Pendaftaran Kunjungan</h2>
+              <p className="text-gray-600 font-medium">
                 Daftarkan kunjungan Anda secara online untuk memudahkan proses administrasi
               </p>
             </div>
@@ -246,8 +284,8 @@ export default function App() {
         {activeTab === 'chat' && (
           <div>
             <div className="mb-8">
-              <h2 className="text-gray-900 mb-2">Chat dengan AI Assistant</h2>
-              <p className="text-gray-600">
+              <h2 className="text-2xl font-black text-gray-900 mb-2 tracking-tight">Chat dengan AI Assistant</h2>
+              <p className="text-gray-600 font-medium">
                 Tanya jawab seputar informasi kunjungan, jadwal, dan prosedur
               </p>
             </div>
@@ -260,8 +298,8 @@ export default function App() {
         {activeTab === 'info' && (
           <div>
             <div className="mb-8">
-              <h2 className="text-gray-900 mb-2">Informasi & Peraturan</h2>
-              <p className="text-gray-600">
+              <h2 className="text-2xl font-black text-gray-900 mb-2 tracking-tight">Informasi & Peraturan</h2>
+              <p className="text-gray-600 font-medium">
                 Informasi lengkap mengenai jadwal, kontak, dan peraturan kunjungan
               </p>
             </div>
