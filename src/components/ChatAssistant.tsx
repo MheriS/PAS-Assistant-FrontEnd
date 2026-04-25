@@ -11,28 +11,54 @@ interface Message {
 import { API_BASE_URL } from '../config';
 
 export default function ChatAssistant() {
-    const [messages, setMessages] = useState<Message[]>([
-        {
-            id: '1',
-            text: 'Selamat datang di PAS-Assistant! Saya siap membantu Anda dengan informasi seputar kunjungan ke Lapas Narkotika IIA Pamekasan. Ada yang bisa saya bantu?',
-            sender: 'assistant',
-            timestamp: new Date(),
-        },
-    ]);
+    const [messages, setMessages] = useState<Message[]>(() => {
+        const saved = localStorage.getItem('pas_chat_messages');
+        if (saved) {
+            try {
+                const parsed = JSON.parse(saved);
+                return parsed.map((m: any) => ({
+                    ...m,
+                    timestamp: new Date(m.timestamp)
+                }));
+            } catch (e) {
+                console.error('Error loading chat history:', e);
+            }
+        }
+        return [
+            {
+                id: '1',
+                text: 'Selamat datang di PAS-Assistant! Saya siap membantu Anda dengan informasi seputar kunjungan ke Lapas Narkotika IIA Pamekasan. Ada yang bisa saya bantu?',
+                sender: 'assistant',
+                timestamp: new Date(),
+            },
+        ];
+    });
+
+    useEffect(() => {
+        localStorage.setItem('pas_chat_messages', JSON.stringify(messages));
+    }, [messages]);
+
     const [input, setInput] = useState('');
     const [isThinking, setIsThinking] = useState(false);
     const [isTyping, setIsTyping] = useState(false);
-    const messagesEndRef = useRef<HTMLDivElement>(null);
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-    const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const scrollToBottom = (behavior: 'auto' | 'smooth' = 'smooth') => {
+        if (scrollContainerRef.current) {
+            scrollContainerRef.current.scrollTo({
+                top: scrollContainerRef.current.scrollHeight,
+                behavior
+            });
+        }
     };
 
     useEffect(() => {
         // Only scroll to bottom if there's more than the initial message
         // or if assistant is thinking/typing (user interaction)
         if (messages.length > 1 || isThinking || isTyping) {
-            scrollToBottom();
+            // First scroll on mount should be instant to avoid jumping
+            const behavior = (messages.length > 1 && !isThinking && !isTyping) ? 'auto' : 'smooth';
+            scrollToBottom(behavior);
         }
     }, [messages, isThinking, isTyping]);
 
@@ -113,7 +139,10 @@ export default function ChatAssistant() {
                 </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            <div
+                ref={scrollContainerRef}
+                className="flex-1 overflow-y-auto p-4 space-y-4"
+            >
                 {messages.map((message) => (
                     <div
                         key={message.id}
@@ -176,7 +205,7 @@ export default function ChatAssistant() {
                     </div>
                 )}
 
-                <div ref={messagesEndRef} />
+
             </div>
 
             <div className="p-4 border-t border-border">
