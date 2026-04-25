@@ -19,6 +19,11 @@ export default function App() {
   const [visitorRegistrations, setVisitorRegistrations] = useState<RegistrationRecord[]>([]);
   const [dynamicSchedule, setDynamicSchedule] = useState<{ day: string, time: string, color: string }[]>([]);
 
+  // Reset scroll to top when tab changes
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }, [activeTab]);
+
   useEffect(() => {
     const fetchDynamicSchedule = async () => {
       try {

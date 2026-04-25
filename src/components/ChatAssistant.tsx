@@ -29,7 +29,11 @@ export default function ChatAssistant() {
     };
 
     useEffect(() => {
-        scrollToBottom();
+        // Only scroll to bottom if there's more than the initial message
+        // or if assistant is thinking/typing (user interaction)
+        if (messages.length > 1 || isThinking || isTyping) {
+            scrollToBottom();
+        }
     }, [messages, isThinking, isTyping]);
 
 
