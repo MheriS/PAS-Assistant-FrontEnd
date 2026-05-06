@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Building2, MessageSquare, FileText, BarChart3, Menu, X, Shield, LogOut, CheckCircle2, ArrowRight, Mail, Phone, ExternalLink, ShieldCheck } from 'lucide-react';
+import { Building2, MessageSquare, FileText, BarChart3, Menu, X, Shield, LogOut, CheckCircle2, ArrowRight, Home, Mail, Phone, ExternalLink, ShieldCheck } from 'lucide-react';
 import ChatAssistant from './components/ChatAssistant';
 import RegistrationForm from './components/RegistrationForm';
 import InfoPanel from './components/InfoPanel';
@@ -9,10 +9,10 @@ import AdminLogin from './components/AdminLogin';
 import AdminDashboard from './components/AdminDashboard';
 import { getRegistrationsByNIK, getAllVisitSlots, getAllRecurringSlots, type RegistrationRecord } from './utils/registrationStorage';
 
-type Tab = 'dashboard' | 'registration' | 'chat' | 'info' | 'admin' | 'status';
+type Tab = 'beranda' | 'dashboard' | 'registration' | 'chat' | 'info' | 'admin' | 'status';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<Tab>('dashboard');
+  const [activeTab, setActiveTab] = useState<Tab>('beranda');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(localStorage.getItem('is_admin_logged_in') === 'true');
   const [statusNik, setStatusNik] = useState('');
@@ -35,7 +35,6 @@ export default function App() {
         const dayMap: Record<string, { start: string, end: string }> = {};
         const daysOrder = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
 
-        // 1. Process Recurring Slots (Base Schedule)
         recurring.filter(r => r.is_active).forEach(rule => {
           const dayName = daysOrder[rule.day_of_week];
           if (!dayMap[dayName]) {
@@ -43,19 +42,17 @@ export default function App() {
           }
         });
 
-        // 2. Process Specific Slots (Overrides/Additional)
         const today = new Date().toISOString().split('T')[0];
         slots.filter(s => s.is_available && s.date >= today).forEach(slot => {
           const date = new Date(slot.date);
           const dayName = daysOrder[date.getDay()];
-          // specific slots override or add to recurring
           dayMap[dayName] = { start: slot.start_time, end: slot.end_time };
         });
 
         const schedule = Object.entries(dayMap).map(([day, times]) => ({
           day,
           time: `${times.start.substring(0, 5)} - ${times.end.substring(0, 5)}`,
-          color: day === 'Selasa' ? 'blue' : day === 'Kamis' ? 'emerald' : 'indigo'
+          color: 'blue'
         })).sort((a, b) => daysOrder.indexOf(a.day) - daysOrder.indexOf(b.day));
 
         if (schedule.length > 0) {
@@ -87,93 +84,110 @@ export default function App() {
   };
 
   const tabs = [
-    { id: 'dashboard' as Tab, label: 'Dashboard', icon: BarChart3 },
+    { id: 'beranda' as Tab, label: 'Home', icon: Home },
+    { id: 'dashboard' as Tab, label: 'Statistik Kunjungan', icon: BarChart3 },
     { id: 'registration' as Tab, label: 'Daftar Kunjungan', icon: FileText },
     { id: 'status' as Tab, label: 'Cek Status', icon: CheckCircle2 },
-    { id: 'chat' as Tab, label: 'Chat Assistant', icon: MessageSquare },
-    { id: 'info' as Tab, label: 'Informasi', icon: Building2 },
-    { id: 'admin' as Tab, label: isAdminLoggedIn ? 'Admin Panel' : 'Admin Login', icon: Shield },
+    { id: 'chat' as Tab, label: 'Pusat Bantuan AI', icon: MessageSquare },
+    { id: 'info' as Tab, label: 'Pusat Informasi', icon: Building2 },
+    { id: 'admin' as Tab, label: isAdminLoggedIn ? 'Admin Panel' : 'Login Petugas', icon: Shield },
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-emerald-50">
-      <header className="bg-white/90 backdrop-blur-xl shadow-sm border-b border-gray-100 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex items-center justify-between h-20">
-            <div className="flex items-center gap-4">
-              <div className="relative group cursor-pointer" onClick={() => setActiveTab('dashboard')}>
-                <div className="absolute inset-0 bg-blue-600 rounded-xl blur-md opacity-20 group-hover:opacity-40 transition-opacity"></div>
-                <div className="relative w-11 h-11 bg-gradient-to-br from-blue-600 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg">
-                  <Building2 className="w-6 h-6 text-white" />
+    <div className="min-h-screen relative font-sans text-slate-800 flex flex-col bg-slate-50">
+      {/* INSTITUTIONAL BACKGROUND - LIGHT THEME */}
+      <div className="fixed inset-0 z-0 bg-slate-100 pointer-events-none">
+        <img
+          src="/lapas_bg.jpg"
+          alt="Lapas Background"
+          className="w-full h-full object-cover object-center opacity-[0.03] mix-blend-multiply filter blur-[2px]"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-slate-50/80" />
+      </div>
+
+      <div className="relative z-10 flex flex-col min-h-screen">
+        {/* FORMAL HEADER - 2 ROWS (LIGHT THEME) */}
+        <header className="bg-white shadow-md sticky top-0 z-50">
+          {/* Top border accent - Institutional Blue */}
+          <div className="w-full h-1.5 bg-blue-800"></div>
+
+          {/* Top Row: Logo & Identity & Admin */}
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-between h-24">
+              {/* Logo & Title */}
+              <div className="flex items-center gap-5">
+                <div className="flex items-center justify-center p-3.5 bg-blue-50 border border-blue-100 rounded-md shadow-sm cursor-pointer hover:bg-blue-100 transition" onClick={() => setActiveTab('dashboard')}>
+                  <Building2 className="w-8 h-8 text-blue-700" />
+                </div>
+                <div className="flex flex-col border-l-2 border-slate-200 pl-5 py-1">
+                  <h1 className="text-slate-900 text-2xl font-black tracking-tight uppercase leading-tight">Sistem Layanan PAS</h1>
+                  <p className="text-xs text-blue-700 font-bold tracking-widest uppercase mt-1">Lapas Narkotika IIA Pamekasan</p>
                 </div>
               </div>
-              <div className="hidden lg:flex flex-col">
-                <h1 className="text-gray-900 text-lg font-black tracking-tight leading-none">PAS-Assistant</h1>
-                <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mt-0.5">Lapas Pamekasan</p>
-              </div>
-            </div>
 
-            <nav className="hidden md:flex items-center bg-gray-50/80 p-1.5 rounded-2xl border border-gray-200/50">
-              {tabs.filter(t => !['admin'].includes(t.id)).map((tab) => {
-                const Icon = tab.icon;
-                const isActive = activeTab === tab.id;
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all duration-300 ${isActive
-                      ? 'bg-white text-blue-600 shadow-md border border-gray-100'
-                      : 'text-gray-500 hover:text-gray-900 hover:bg-white/50'
-                      }`}
-                  >
-                    <Icon className={`w-[18px] h-[18px] ${isActive ? 'text-blue-600' : 'text-gray-400'}`} />
-                    <span className={isActive ? 'block' : 'hidden xl:block'}>{tab.label}</span>
-                  </button>
-                );
-              })}
-            </nav>
-
-            <div className="flex items-center gap-3">
-              <div className="hidden md:flex items-center gap-3">
-                <div className="h-8 w-[1px] bg-gray-200 mx-1"></div>
+              {/* ADMIN ACTIONS */}
+              <div className="flex items-center gap-3">
                 <button
                   onClick={() => setActiveTab('admin')}
-                  className={`flex items-center gap-2.5 px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'admin'
-                    ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-xl shadow-blue-500/20'
-                    : 'text-gray-600 hover:bg-gray-100'
+                  className={`hidden md:flex items-center gap-2.5 px-5 py-2.5 rounded-sm text-sm font-bold border transition-all ${activeTab === 'admin'
+                    ? 'bg-blue-800 border-blue-800 text-white shadow-md'
+                    : 'bg-white border-slate-300 text-slate-600 hover:bg-slate-50 hover:text-blue-700'
                     }`}
                 >
-                  <Shield className="w-5 h-5" />
-                  <span className="hidden lg:block">{isAdminLoggedIn ? 'Admin Panel' : 'Admin'}</span>
+                  <Shield className="w-4 h-4" />
+                  <span>{isAdminLoggedIn ? 'Admin Panel' : 'Petugas'}</span>
                 </button>
 
                 {isAdminLoggedIn && (
                   <button
                     onClick={handleAdminLogout}
-                    className="p-2 text-red-500 hover:bg-red-50 rounded-xl transition-all"
-                    title="Logout"
+                    className="hidden md:flex p-2.5 bg-red-50 border border-red-200 text-red-600 hover:bg-red-100 rounded-sm transition-all shadow-sm"
+                    title="Logout Petugas"
                   >
-                    <LogOut className="w-5 h-5" />
+                    <LogOut className="w-4 h-4" />
                   </button>
                 )}
-              </div>
 
-              {/* Always show Menu Trigger on Mobile */}
-              <button
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="md:hidden p-2.5 rounded-xl hover:bg-gray-100 flex items-center justify-center bg-gray-50 border border-gray-200"
-                aria-label="Toggle Menu"
-              >
-                {mobileMenuOpen ? <X className="w-6 h-6 text-gray-600" /> : <Menu className="w-6 h-6 text-gray-600" />}
-              </button>
+                {/* MOBILE Toggle */}
+                <button
+                  onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                  className="md:hidden p-2.5 bg-slate-50 border border-slate-200 rounded-sm text-slate-600 hover:text-blue-700 hover:bg-blue-50"
+                >
+                  {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
 
-        {mobileMenuOpen && (
-          <nav className="md:hidden py-6 px-4 border-t border-gray-100 bg-white shadow-2xl animate-in slide-in-from-top-4 duration-300">
-            <div className="flex flex-col gap-3">
-              <div className="grid grid-cols-2 gap-3 mb-3">
+          {/* Bottom Row: Navigation Tabs */}
+          <div className="border-t border-slate-200 bg-slate-50/90 hidden md:block backdrop-blur-sm">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <nav className="flex items-center gap-2 overflow-x-auto no-scrollbar pt-1">
+                {tabs.filter(t => !['admin'].includes(t.id)).map((tab) => {
+                  const Icon = tab.icon;
+                  const isActive = activeTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`flex items-center gap-2.5 px-5 py-3 text-sm font-bold tracking-wide uppercase transition-all duration-200 rounded-t-lg border-b-4 ${isActive
+                        ? 'bg-white text-blue-800 border-blue-700 shadow-sm'
+                        : 'text-slate-600 border-transparent hover:text-blue-700 hover:bg-white'
+                        }`}
+                    >
+                      <Icon className={`w-4 h-4 ${isActive ? 'text-blue-700' : 'text-slate-400'}`} />
+                      <span>{tab.label}</span>
+                    </button>
+                  );
+                })}
+              </nav>
+            </div>
+          </div>
+
+          {/* MOBILE NAV OVERLAY */}
+          {mobileMenuOpen && (
+            <nav className="md:hidden bg-white border-t border-slate-200 shadow-2xl absolute w-full top-full">
+              <div className="grid grid-cols-2 gap-px bg-slate-200 p-px">
                 {tabs.filter(t => t.id !== 'admin').map((tab) => {
                   const Icon = tab.icon;
                   return (
@@ -183,34 +197,33 @@ export default function App() {
                         setActiveTab(tab.id);
                         setMobileMenuOpen(false);
                       }}
-                      className={`flex flex-col items-center justify-center gap-2 px-3 py-4 rounded-2xl text-xs font-bold transition-all ${activeTab === tab.id
-                        ? 'bg-blue-600 text-white shadow-lg'
-                        : 'bg-gray-50 text-gray-600 border border-gray-100'
+                      className={`flex flex-col items-center justify-center gap-2 p-4 text-xs font-bold uppercase tracking-wider transition-all ${activeTab === tab.id
+                        ? 'bg-blue-50 text-blue-800 shadow-inner border-b-2 border-blue-600'
+                        : 'bg-white text-slate-600 hover:bg-slate-50 hover:text-blue-700'
                         }`}
                     >
-                      <Icon className="w-6 h-6 mb-1" />
+                      <Icon className="w-5 h-5 mb-1" />
                       {tab.label}
                     </button>
                   );
                 })}
               </div>
-
-              <div className="pt-3 border-t border-gray-100 space-y-3">
+              <div className="p-4 bg-slate-50">
                 <button
                   onClick={() => {
                     setActiveTab('admin');
                     setMobileMenuOpen(false);
                   }}
-                  className={`flex items-center justify-between w-full px-5 py-4 rounded-2xl font-bold transition-all ${activeTab === 'admin'
-                    ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white'
-                    : 'bg-gray-50 text-gray-600 border border-gray-100'
+                  className={`w-full flex items-center justify-between p-4 rounded-sm font-bold border ${activeTab === 'admin'
+                    ? 'bg-blue-800 border-blue-800 text-white shadow-md'
+                    : 'bg-white border-slate-300 text-slate-700 shadow-sm'
                     }`}
                 >
                   <div className="flex items-center gap-3">
                     <Shield className="w-5 h-5" />
-                    {isAdminLoggedIn ? 'Admin Panel' : 'Admin Login'}
+                    {isAdminLoggedIn ? 'Administrator Panel' : 'Login Petugas'}
                   </div>
-                  <ArrowRight className="w-5 h-5 opacity-50" />
+                  <ArrowRight className="w-4 h-4 text-slate-400" />
                 </button>
 
                 {isAdminLoggedIn && (
@@ -219,264 +232,428 @@ export default function App() {
                       handleAdminLogout();
                       setMobileMenuOpen(false);
                     }}
-                    className="flex items-center justify-center gap-2 w-full px-5 py-4 rounded-2xl bg-red-50 text-red-600 font-bold border border-red-100 shadow-sm"
+                    className="w-full flex items-center justify-center gap-2 p-4 mt-3 rounded-sm bg-red-50 border border-red-200 text-red-600 font-bold shadow-sm"
                   >
-                    <LogOut className="w-5 h-5" />
+                    <LogOut className="w-4 h-4" />
                     Keluar (Logout)
                   </button>
                 )}
               </div>
-            </div>
-          </nav>
-        )}
-      </header>
+            </nav>
+          )}
+        </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {activeTab === 'dashboard' && (
-          <div>
-            <div className="mb-8">
-              <h2 className="text-2xl font-black text-gray-900 mb-2 tracking-tight">Dashboard Monitoring</h2>
-              <p className="text-gray-600 font-medium">
-                Pantau statistik dan jadwal kunjungan Lapas Narkotika IIA Pamekasan
-              </p>
-            </div>
-            {!isAdminLoggedIn && <DashboardStats />}
-            <VisitSchedule />
-          </div>
-        )}
+        {/* MAIN CONTENT AREA */}
+        <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-10 relative z-10 flex flex-col">
 
-        {activeTab === 'status' && (
-          <div className="max-w-4xl mx-auto">
-            <div className="mb-8">
-              <h2 className="text-2xl font-black text-gray-900 mb-2 tracking-tight">Cek Status Pendaftaran</h2>
-              <p className="text-gray-600 font-medium">
-                Masukkan NIK Anda untuk melihat status pendaftaran kunjungan
-              </p>
-            </div>
-            <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100 mb-8">
-              <div className="flex flex-col md:flex-row gap-4">
-                <input
-                  type="text"
-                  maxLength={16}
-                  value={statusNik}
-                  onChange={(e) => setStatusNik(e.target.value.replace(/\D/g, ''))}
-                  placeholder="Masukkan 16 digit NIK"
-                  className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 outline-none"
-                />
-                <button
-                  onClick={handleCheckStatus}
-                  className="bg-blue-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-blue-700 transition-all"
-                >
-                  Cek Status
-                </button>
-              </div>
-            </div>
+          {/* HERO SECTION FOR BERANDA */}
+          {activeTab === 'beranda' && (
+            <div className="flex flex-col gap-6 mb-4">
 
-            <div className="space-y-4">
-              {visitorRegistrations.length === 0 ? (
-                <div className="text-center py-12 bg-white rounded-2xl border-2 border-dashed border-gray-200">
-                  <p className="text-gray-500">Masukkan NIK untuk melihat data pendaftaran Anda</p>
+              {/* Hero Split Layout */}
+              <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-800 via-blue-700 to-blue-900 shadow-xl border border-blue-900">
+                {/* Background pattern */}
+                <div className="absolute inset-0 opacity-10">
+                  <img src="/lapas_bg.jpg" alt="" className="w-full h-full object-cover object-center" />
                 </div>
-              ) : (
-                visitorRegistrations.map((reg) => (
-                  <div key={reg.id} className="bg-white p-6 rounded-2xl shadow-md border border-gray-100 flex flex-col md:flex-row justify-between items-center gap-4">
-                    <div>
-                      <h3 className="font-bold text-gray-900">{reg.id}</h3>
-                      <p className="text-sm text-gray-500">WBP: {reg.inmateName} | Tanggal: {reg.visitDate}</p>
+                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_rgba(255,255,255,0.08)_0%,_transparent_60%)]" />
+
+                <div className="relative z-10 flex flex-col md:flex-row items-center gap-8 px-8 py-12 md:px-14 md:py-14">
+                  {/* Left: Text */}
+                  <div className="flex-1 text-center md:text-left">
+                    <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 border border-white/20 mb-5">
+                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                      <span className="text-xs font-bold text-blue-100 uppercase tracking-widest">Sistem Online & Aktif</span>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <span className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase ${reg.status === 'approved' ? 'bg-green-100 text-green-700' :
-                        reg.status === 'rejected' ? 'bg-red-100 text-red-700' :
-                          'bg-yellow-100 text-yellow-700'
-                        }`}>
-                        {reg.status}
-                      </span>
+
+                    <h2 className="text-3xl md:text-4xl lg:text-5xl font-black text-white leading-tight mb-4">
+                      Portal Layanan<br />
+                      <span className="text-yellow-300">Kunjungan WBP</span>
+                    </h2>
+
+                    <p className="text-blue-100 text-sm md:text-base leading-relaxed mb-8 max-w-lg">
+                      Daftarkan kunjungan kepada Warga Binaan Pemasyarakatan Lapas Narkotika Kelas IIA Pamekasan secara <strong>online</strong>, mudah, dan transparan.
+                    </p>
+
+                    <div className="flex flex-col sm:flex-row gap-3 justify-center md:justify-start">
+                      <button
+                        onClick={() => setActiveTab('registration')}
+                        className="flex items-center justify-center gap-2.5 px-6 py-3 bg-white text-blue-800 rounded-lg font-black text-sm uppercase tracking-wider hover:bg-yellow-50 transition-all shadow-lg hover:-translate-y-0.5"
+                      >
+                        <FileText className="w-4 h-4" />
+                        Daftar Kunjungan
+                      </button>
+                      <button
+                        onClick={() => setActiveTab('status')}
+                        className="flex items-center justify-center gap-2.5 px-6 py-3 bg-transparent text-white border-2 border-white/40 rounded-lg font-bold text-sm uppercase tracking-wider hover:bg-white/10 hover:border-white/60 transition-all"
+                      >
+                        <CheckCircle2 className="w-4 h-4 text-yellow-300" />
+                        Cek Status
+                      </button>
                     </div>
                   </div>
-                ))
+
+                  {/* Right: Stats Visual */}
+                  <div className="flex-shrink-0 w-full md:w-72 grid grid-cols-2 gap-3">
+                    {[
+                      {
+                        label: 'Hari Layanan',
+                        value: dynamicSchedule.length > 0
+                          ? dynamicSchedule.map(s => s.day).join(', ')
+                          : '—',
+                        sub: 'Per Minggu',
+                        color: 'bg-white/10 border-white/20'
+                      },
+                      {
+                        label: 'Jam Kunjungan',
+                        value: dynamicSchedule.length > 0
+                          ? dynamicSchedule[0].time.replace('-', '–')
+                          : '—',
+                        sub: 'WIB',
+                        color: 'bg-white/10 border-white/20'
+                      },
+                      { label: 'Proses Pendaftaran', value: '100% Online', sub: 'Via Portal', color: 'bg-yellow-400/20 border-yellow-300/30' },
+                      { label: 'Verifikasi Status', value: 'Real-time', sub: 'Via NIK', color: 'bg-emerald-400/20 border-emerald-300/30' },
+                    ].map((item, i) => (
+                      <div key={i} className={`${item.color} border rounded-xl p-4 backdrop-blur-sm`}>
+                        <p className="text-[10px] text-blue-200 uppercase tracking-wider font-bold mb-1">{item.label}</p>
+                        <p className="text-white font-black text-sm leading-tight">{item.value}</p>
+                        <p className="text-blue-300 text-[10px] font-semibold mt-0.5">{item.sub}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Info Banner / Pengumuman */}
+              <div className="flex items-start gap-4 bg-amber-50 border border-amber-200 rounded-xl px-5 py-4 shadow-sm">
+                <div className="w-9 h-9 rounded-lg bg-amber-100 border border-amber-200 flex items-center justify-center shrink-0 mt-0.5">
+                  <ShieldCheck className="w-5 h-5 text-amber-700" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-xs font-black text-amber-800 uppercase tracking-widest mb-1">📢 Catatan Penting</p>
+                  <p className="text-sm text-amber-900">
+                    Silakan lakukan <strong>pendaftaran lebih awal</strong> untuk memastikan kuota kunjungan pada jadwal yang dipilih belum penuh. Pastikan NIK pengunjung dan nama WBP sesuai dokumen resmi.
+                  </p>
+                </div>
+                <button onClick={() => setActiveTab('info')} className="hidden sm:flex items-center gap-1.5 text-xs font-black text-amber-700 uppercase tracking-widest hover:text-amber-900 transition-colors whitespace-nowrap mt-1">
+                  Info Lengkap <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+
+              {/* Layanan Utama */}
+              <div>
+                <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest mb-4 flex items-center gap-2">
+                  <span className="w-5 h-px bg-slate-300 block"></span>
+                  Layanan Utama
+                  <span className="flex-1 h-px bg-slate-200 block"></span>
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {[
+                    {
+                      tab: 'registration' as Tab,
+                      icon: FileText,
+                      title: 'Daftar Kunjungan',
+                      desc: 'Ajukan usulan kunjungan ke Warga Binaan secara online. Isi formulir lengkap dan tunggu konfirmasi petugas.',
+                      action: 'Daftar Sekarang',
+                      accent: 'border-t-blue-600',
+                      iconBg: 'bg-blue-50',
+                      iconColor: 'text-blue-700',
+                      linkColor: 'text-blue-700 hover:text-blue-900',
+                    },
+                    {
+                      tab: 'status' as Tab,
+                      icon: CheckCircle2,
+                      title: 'Cek Status',
+                      desc: 'Lacak status persetujuan pendaftaran kunjungan menggunakan Nomor Induk Kependudukan (NIK) Anda.',
+                      action: 'Periksa Status',
+                      accent: 'border-t-emerald-600',
+                      iconBg: 'bg-emerald-50',
+                      iconColor: 'text-emerald-700',
+                      linkColor: 'text-emerald-700 hover:text-emerald-900',
+                    },
+                    {
+                      tab: 'chat' as Tab,
+                      icon: MessageSquare,
+                      title: 'Bantuan AI',
+                      desc: 'Konsultasikan pertanyaan Anda tentang prosedur dan layanan kunjungan kepada asisten kecerdasan buatan.',
+                      action: 'Tanya Asisten',
+                      accent: 'border-t-violet-600',
+                      iconBg: 'bg-violet-50',
+                      iconColor: 'text-violet-700',
+                      linkColor: 'text-violet-700 hover:text-violet-900',
+                    },
+                    {
+                      tab: 'info' as Tab,
+                      icon: Building2,
+                      title: 'Informasi',
+                      desc: 'Pelajari tata tertib, persyaratan kunjungan, dan regulasi yang berlaku di Lapas Narkotika IIA Pamekasan.',
+                      action: 'Baca Selengkapnya',
+                      accent: 'border-t-amber-600',
+                      iconBg: 'bg-amber-50',
+                      iconColor: 'text-amber-700',
+                      linkColor: 'text-amber-700 hover:text-amber-900',
+                    },
+                  ].map((card) => {
+                    const Icon = card.icon;
+                    return (
+                      <button
+                        key={card.tab}
+                        onClick={() => setActiveTab(card.tab)}
+                        className={`group text-left bg-white border border-slate-200 border-t-4 ${card.accent} rounded-xl p-6 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-200`}
+                      >
+                        <div className={`w-11 h-11 rounded-lg ${card.iconBg} flex items-center justify-center mb-4`}>
+                          <Icon className={`w-5 h-5 ${card.iconColor}`} />
+                        </div>
+                        <h3 className="font-black text-slate-900 text-sm uppercase tracking-wide mb-2">{card.title}</h3>
+                        <p className="text-xs text-slate-500 leading-relaxed">{card.desc}</p>
+                        <div className={`flex items-center gap-1.5 mt-5 text-xs font-black ${card.linkColor} uppercase tracking-widest group-hover:gap-2.5 transition-all`}>
+                          {card.action} <ArrowRight className="w-3 h-3" />
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Institutional Headers for other tabs */}
+          {activeTab !== 'beranda' && (
+            <div className="mb-6 lg:mb-8 border-l-4 border-blue-700 pl-4 lg:pl-5 py-2 mt-2">
+              {activeTab === 'dashboard' && (
+                <>
+                  <h2 className="text-2xl lg:text-3xl font-black text-slate-900 uppercase tracking-tight">Dasbor Statistik & Jadwal</h2>
+                  <p className="text-sm text-slate-600 mt-1.5 uppercase tracking-widest font-bold">Ringkasan Layanan & Jadwal Kunjungan Lapas Narkotika Pamekasan</p>
+                </>
+              )}
+              {activeTab === 'status' && (
+                <>
+                  <h2 className="text-2xl lg:text-3xl font-black text-slate-900 uppercase tracking-tight">Verifikasi Status Pendaftaran</h2>
+                  <p className="text-sm text-slate-600 mt-1.5 uppercase tracking-widest font-bold">Pengecekan Status Berdasarkan Nomor Induk Kependudukan</p>
+                </>
+              )}
+              {activeTab === 'registration' && (
+                <>
+                  <h2 className="text-2xl lg:text-3xl font-black text-slate-900 uppercase tracking-tight">Formulir Pendaftaran Registrasi</h2>
+                  <p className="text-sm text-slate-600 mt-1.5 uppercase tracking-widest font-bold">Pengajuan Usulan Kunjungan Warga Binaan</p>
+                </>
+              )}
+              {activeTab === 'chat' && (
+                <>
+                  <h2 className="text-2xl lg:text-3xl font-black text-slate-900 uppercase tracking-tight">Pusat Layanan Bantuan Terpadu</h2>
+                  <p className="text-sm text-slate-600 mt-1.5 uppercase tracking-widest font-bold">Konsultasi Informasi Melalui Artificial Intelligence (AI)</p>
+                </>
+              )}
+              {activeTab === 'info' && (
+                <>
+                  <h2 className="text-2xl lg:text-3xl font-black text-slate-900 uppercase tracking-tight">Pusat Regulasi & Informasi</h2>
+                  <p className="text-sm text-slate-600 mt-1.5 uppercase tracking-widest font-bold">Tata Tertib & Petunjuk Pelaksanaan Layanan</p>
+                </>
+              )}
+              {activeTab === 'admin' && (
+                <>
+                  <h2 className="text-2xl lg:text-3xl font-black text-slate-900 uppercase tracking-tight">Modul Administrasi Petugas</h2>
+                  <p className="text-sm text-slate-600 mt-1.5 uppercase tracking-widest font-bold">Platform Tata Kelola Pendaftaran & Manajemen Sistem</p>
+                </>
+              )}
+            </div>
+          )}
+
+          {/* Institutional Content Panel Wrapper */}
+          <div className={activeTab === 'beranda' ? 'hidden' : 'bg-white flex-1 rounded-sm shadow-sm border border-slate-200 p-5 md:p-8 relative'}>
+            {/* Soft decorative background in the panel */}
+            <div className="absolute inset-0 bg-white/60 pointer-events-none rounded-sm"></div>
+
+            <div className="relative z-10 space-y-10">
+              {activeTab === 'dashboard' && (
+                <div>
+                  {!isAdminLoggedIn && <DashboardStats />}
+                  <div className="mt-8">
+                    <VisitSchedule />
+                  </div>
+                </div>
+              )}
+
+              {activeTab === 'status' && (
+                <div className="max-w-4xl mx-auto space-y-6">
+                  <div className="bg-white p-6 md:p-8 border-t-4 border-t-blue-700 shadow-md border-x border-b border-slate-200">
+                    <label className="block text-sm font-bold text-slate-700 uppercase tracking-wider mb-3">Nomor Induk Kependudukan (NIK)</label>
+                    <div className="flex flex-col sm:flex-row gap-4">
+                      <input
+                        type="text"
+                        maxLength={16}
+                        value={statusNik}
+                        onChange={(e) => setStatusNik(e.target.value.replace(/\D/g, ''))}
+                        placeholder="Masukkan 16 Digit NIK Anda Sesuai KTP"
+                        className="flex-1 px-4 py-3 border border-slate-300 bg-slate-50 focus:bg-white focus:border-blue-600 focus:ring-1 focus:ring-blue-600 outline-none transition-colors font-medium text-slate-800"
+                      />
+                      <button
+                        onClick={handleCheckStatus}
+                        className="bg-blue-800 text-white px-8 py-3 font-bold uppercase tracking-wider hover:bg-blue-900 transition-colors border border-blue-900 shadow-sm"
+                      >
+                        Pencarian Data
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    {visitorRegistrations.length === 0 ? (
+                      <div className="text-center py-16 bg-slate-100 border border-slate-300 border-dashed text-slate-500 font-medium tracking-wide">
+                        <p>DATA TIDAK DITEMUKAN / BELUM ADA PENCARIAN</p>
+                      </div>
+                    ) : (
+                      visitorRegistrations.map((reg) => (
+                        <div key={reg.id} className="bg-white p-5 shadow-sm border-l-4 border-slate-400 border-y border-r border-slate-200 flex flex-col md:flex-row justify-between items-center gap-4">
+                          <div>
+                            <h3 className="font-bold text-slate-900 text-lg uppercase">{reg.id}</h3>
+                            <p className="text-sm text-slate-600 font-medium mt-1">NAMA WBP: <span className="font-bold">{reg.inmateName}</span></p>
+                            <p className="text-xs text-slate-500 font-medium">TANGGAL USULAN: <span className="text-slate-700">{reg.visitDate}</span></p>
+                          </div>
+                          <div className="flex items-center">
+                            <span className={`px-4 py-2 text-xs font-bold uppercase tracking-wider border ${reg.status === 'approved' ? 'bg-emerald-50 border-emerald-200 text-emerald-800' :
+                              reg.status === 'rejected' ? 'bg-red-50 border-red-200 text-red-800' :
+                                'bg-amber-50 border-amber-200 text-amber-800'
+                              }`}>
+                              STATUS: {reg.status}
+                            </span>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {activeTab === 'admin' && (
+                <div className="animate-in fade-in duration-500">
+                  {isAdminLoggedIn ? (
+                    <AdminDashboard />
+                  ) : (
+                    <div className="py-10 max-w-xl mx-auto">
+                      <AdminLogin onLogin={handleAdminLogin} />
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {activeTab === 'registration' && (
+                <RegistrationForm />
+              )}
+
+              {activeTab === 'chat' && (
+                <div className="max-w-4xl mx-auto">
+                  <ChatAssistant />
+                </div>
+              )}
+
+              {activeTab === 'info' && (
+                <InfoPanel />
               )}
             </div>
           </div>
-        )}
+        </main>
 
-        {activeTab === 'admin' && (
-          <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
-            {isAdminLoggedIn ? (
-              <>
-                <div className="mb-8">
-                  <h2 className="text-3xl font-black text-gray-900 mb-2 tracking-tight">Panel Administrasi</h2>
-                  <p className="text-gray-600 font-medium">
-                    Layanan pengelolaan pendaftaran kunjungan Lapas Pamekasan
-                  </p>
-                </div>
-                <AdminDashboard />
-              </>
-            ) : (
-              <div className="py-12">
-                <AdminLogin onLogin={handleAdminLogin} />
-              </div>
-            )}
-          </div>
-        )}
+        {/* INSTITUTIONAL FOOTER */}
+        <footer className="bg-slate-950 border-t border-slate-800 text-slate-400 relative z-10 shrink-0">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
 
-        {activeTab === 'registration' && (
-          <div>
-            <div className="mb-8">
-              <h2 className="text-2xl font-black text-gray-900 mb-2 tracking-tight">Pendaftaran Kunjungan</h2>
-              <p className="text-gray-600 font-medium">
-                Daftarkan kunjungan Anda secara online untuk memudahkan proses administrasi
-              </p>
-            </div>
-            <RegistrationForm />
-          </div>
-        )}
-
-        {activeTab === 'chat' && (
-          <div>
-            <div className="mb-8">
-              <h2 className="text-2xl font-black text-gray-900 mb-2 tracking-tight">Chat dengan AI Assistant</h2>
-              <p className="text-gray-600 font-medium">
-                Tanya jawab seputar informasi kunjungan, jadwal, dan prosedur
-              </p>
-            </div>
-            <div className="max-w-4xl mx-auto">
-              <ChatAssistant />
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'info' && (
-          <div>
-            <div className="mb-8">
-              <h2 className="text-2xl font-black text-gray-900 mb-2 tracking-tight">Informasi & Peraturan</h2>
-              <p className="text-gray-600 font-medium">
-                Informasi lengkap mengenai jadwal, kontak, dan peraturan kunjungan
-              </p>
-            </div>
-            <InfoPanel />
-          </div>
-        )}
-      </main>
-
-      <footer className="bg-gray-950 text-gray-300 mt-20 border-t border-gray-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
-            {/* Branding */}
-            <div className="space-y-6">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-900/20">
-                  <Building2 className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <h3 className="text-white font-black text-xl tracking-tight leading-none">PAS-Assistant</h3>
-                  <p className="text-[10px] text-blue-400 font-black uppercase tracking-widest mt-1">Lapas Pamekasan</p>
-                </div>
-              </div>
-              <p className="text-sm text-gray-400 leading-relaxed font-medium">
-                Solusi digital terpadu untuk kemudahan layanan kunjungan dan informasi Warga Binaan Lapas Narkotika IIA Pamekasan.
-              </p>
-              <div className="flex items-center gap-4 pt-2">
-                <a href="#" className="w-9 h-9 bg-gray-900 rounded-xl flex items-center justify-center hover:bg-blue-600 transition-colors group">
-                  <ShieldCheck className="w-5 h-5 text-gray-500 group-hover:text-white" />
-                </a>
-                <a href="#" className="w-9 h-9 bg-gray-900 rounded-xl flex items-center justify-center hover:bg-blue-600 transition-colors group">
-                  <ExternalLink className="w-5 h-5 text-gray-500 group-hover:text-white" />
-                </a>
-              </div>
-            </div>
-
-            {/* Quick Links */}
-            <div>
-              <h4 className="text-white font-black text-sm uppercase tracking-widest mb-6">Navigasi Cepat</h4>
-              <ul className="space-y-4">
-                {tabs.filter(t => t.id !== 'admin').map((tab) => (
-                  <li key={tab.id}>
-                    <button
-                      onClick={() => setActiveTab(tab.id)}
-                      className="text-sm font-bold text-gray-500 hover:text-blue-400 flex items-center gap-2 transition-colors"
-                    >
-                      <ArrowRight className="w-3 h-3" /> {tab.label}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Contact */}
-            <div>
-              <h4 className="text-white font-black text-sm uppercase tracking-widest mb-6">Hubungi Kami</h4>
-              <div className="space-y-5">
-                <div className="flex items-start gap-4">
-                  <div className="w-8 h-8 bg-gray-900 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <Phone className="w-4 h-4 text-blue-500" />
+              <div className="space-y-4">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-slate-900 border border-slate-700 flex items-center justify-center p-2">
+                    <Building2 className="w-full h-full text-blue-500" />
                   </div>
                   <div>
-                    <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-0.5">Telepon</p>
-                    <p className="text-sm font-bold text-gray-300">(0324) 322xxx</p>
+                    <h3 className="text-slate-100 font-bold tracking-widest text-lg uppercase">PAS-Assistant</h3>
+                    <p className="text-[10px] text-blue-500 font-bold uppercase tracking-widest mt-1">Humas Lapas Pamekasan</p>
                   </div>
                 </div>
-                <div className="flex items-start gap-4">
-                  <div className="w-8 h-8 bg-gray-900 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <Mail className="w-4 h-4 text-emerald-500" />
+                <p className="text-sm leading-relaxed text-slate-500 font-medium">
+                  Sistem Informasi & Tata Kelola Terpadu Layanan Kunjungan Warga Binaan Pemasyarakatan pada Lapas Narkotika Kelas IIA Pamekasan.
+                </p>
+                <div className="flex items-center gap-3 pt-2">
+                  <a href="#" className="w-8 h-8 rounded-sm bg-slate-900 border border-slate-800 flex items-center justify-center hover:bg-slate-800 hover:text-white transition-colors">
+                    <ShieldCheck className="w-4 h-4" />
+                  </a>
+                  <a href="#" className="w-8 h-8 rounded-sm bg-slate-900 border border-slate-800 flex items-center justify-center hover:bg-slate-800 hover:text-white transition-colors">
+                    <ExternalLink className="w-4 h-4" />
+                  </a>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="text-slate-200 font-bold text-xs uppercase tracking-widest mb-6 border-l-2 border-blue-500 pl-3">Navigasi Sistem</h4>
+                <ul className="space-y-3">
+                  {tabs.filter(t => t.id !== 'admin').map((tab) => (
+                    <li key={tab.id}>
+                      <button
+                        onClick={() => setActiveTab(tab.id)}
+                        className="text-sm font-semibold text-slate-500 hover:text-blue-400 flex items-center gap-2 transition-colors uppercase tracking-wider"
+                      >
+                        <span className="w-1.5 h-1.5 bg-slate-700 block"></span> {tab.label}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div>
+                <h4 className="text-slate-200 font-bold text-xs uppercase tracking-widest mb-6 border-l-2 border-blue-500 pl-3">Informasi Kontak</h4>
+                <div className="space-y-4">
+                  <div className="flex items-center gap-4 group">
+                    <div className="w-10 h-10 bg-slate-900 border border-slate-800 flex items-center justify-center">
+                      <Phone className="w-4 h-4 text-slate-400 group-hover:text-blue-400" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest mb-0.5">Layanan Informasi</p>
+                      <p className="text-sm font-semibold text-slate-300">082143317094</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-0.5">Email Resmi</p>
-                    <p className="text-sm font-bold text-gray-300 break-all">lapas.pamekasan@kemenkumham.go.id</p>
+                  <div className="flex items-center gap-4 group">
+                    <div className="w-10 h-10 bg-slate-900 border border-slate-800 flex items-center justify-center">
+                      <Mail className="w-4 h-4 text-slate-400 group-hover:text-amber-400" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest mb-0.5">Surat Elektronik</p>
+                      <p className="text-sm font-semibold text-slate-300">lapasnarkotik.pamekasan@gmail.com</p>
+                    </div>
                   </div>
                 </div>
               </div>
+
+              <div>
+                <h4 className="text-slate-200 font-bold text-xs uppercase tracking-widest mb-6 border-l-2 border-blue-500 pl-3">Agenda Operasional</h4>
+                <div className="bg-slate-900 border border-slate-800 p-4 space-y-3">
+                  {dynamicSchedule.length > 0 ? (
+                    dynamicSchedule.map((item, index) => (
+                      <div key={index} className={`flex justify-between items-center ${index !== dynamicSchedule.length - 1 ? 'border-b border-slate-800 pb-2 mb-2' : ''}`}>
+                        <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">{item.day}</span>
+                        <span className="text-xs font-bold text-slate-200 bg-slate-800 px-2 py-1 border border-slate-700">{item.time}</span>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-3 text-slate-600 text-xs font-semibold tracking-widest uppercase">
+                      Memuat jadwal...
+                    </div>
+                  )}
+                </div>
+              </div>
+
             </div>
 
-            {/* Op Hours */}
-            <div>
-              <h4 className="text-white font-black text-sm uppercase tracking-widest mb-6">Jam Operasional</h4>
-              <div className="bg-gray-900/50 rounded-2xl p-5 border border-gray-800/50 space-y-4">
-                {dynamicSchedule.length > 0 ? (
-                  dynamicSchedule.map((item, index) => (
-                    <div key={index} className={`flex justify-between items-center ${index !== dynamicSchedule.length - 1 ? 'border-b border-gray-800 pb-3' : ''}`}>
-                      <div className="flex items-center gap-2">
-                        <div className={`w-2 h-2 rounded-full ${item.color === 'blue' ? 'bg-blue-500' : item.color === 'emerald' ? 'bg-emerald-500' : 'bg-indigo-500'}`}></div>
-                        <span className="text-sm font-bold text-gray-400">{item.day}</span>
-                      </div>
-                      <span className={`text-xs font-black text-white px-2 py-1 rounded-md ${item.color === 'blue' ? 'bg-blue-600/20' : item.color === 'emerald' ? 'bg-emerald-600/20' : 'bg-indigo-600/20'}`}>
-                        {item.time}
-                      </span>
-                    </div>
-                  ))
-                ) : (
-                  <>
-                    <div className="flex justify-between items-center border-b border-gray-800 pb-3">
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                        <span className="text-sm font-bold text-gray-400">Selasa</span>
-                      </div>
-                      <span className="text-xs font-black text-white bg-blue-600/20 px-2 py-1 rounded-md">08:00 - 11:00</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
-                        <span className="text-sm font-bold text-gray-400">Kamis</span>
-                      </div>
-                      <span className="text-xs font-black text-white bg-emerald-600/20 px-2 py-1 rounded-md">08:00 - 11:00</span>
-                    </div>
-                  </>
-                )}
-                <p className="text-[10px] text-gray-500 italic mt-2">* Hari lain libur layanan kunjungan</p>
+            <div className="pt-6 border-t border-slate-800 flex flex-col md:flex-row justify-between items-center gap-4">
+              <p className="text-slate-600 text-xs font-bold tracking-widest uppercase text-center md:text-left">
+                &copy; 2026 KEMENTERIAN HUKUM DAN HAK ASASI MANUSIA<br className="md:hidden" /> REPUBLIK INDONESIA
+              </p>
+              <div className="flex items-center gap-6">
+                <span className="text-[10px] font-bold text-slate-600 hover:text-slate-400 uppercase tracking-widest cursor-pointer transition-colors">Kebijakan Privasi</span>
+                <span className="text-[10px] font-bold text-slate-600 hover:text-slate-400 uppercase tracking-widest cursor-pointer transition-colors">Syarat Ketentuan</span>
               </div>
             </div>
           </div>
-
-          <div className="pt-8 border-t border-gray-900 grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
-            <p className="text-gray-500 text-xs font-medium text-center md:text-left">
-              &copy; 2026 Lapas Narkotika IIA Pamekasan. Kemenkumham RI.
-            </p>
-            <div className="flex justify-center md:justify-end gap-6">
-              <span className="text-[10px] font-black text-gray-600 uppercase tracking-tighter">Privacy Policy</span>
-              <span className="text-[10px] font-black text-gray-600 uppercase tracking-tighter">Terms of Service</span>
-            </div>
-          </div>
-        </div>
-      </footer>
+        </footer>
+      </div>
     </div>
   );
 }
