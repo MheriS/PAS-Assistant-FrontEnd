@@ -30,51 +30,51 @@ export default function DashboardStats() {
             value: statsData.total.toString(),
             icon: Users,
             color: 'blue',
-            trend: 'Semua pendaftaran',
+            trend: 'Semua Usulan',
         },
         {
             title: 'Pendaftaran Pending',
             value: statsData.pending.toString(),
             icon: Clock,
             color: 'amber',
-            trend: 'Menunggu verifikasi',
+            trend: 'Menunggu Verifikasi',
         },
         {
-            title: 'Disetujui',
+            title: 'Telah Disetujui',
             value: statsData.approved.toString(),
             icon: CheckCircle,
             color: 'green',
-            trend: 'Kunjungan valid',
+            trend: 'Kunjungan Valid',
         },
         {
             title: 'Kunjungan Hari Ini',
             value: statsData.today.toString(),
             icon: Calendar,
             color: 'purple',
-            trend: 'Terdaftar hari ini',
+            trend: 'Terjadwal Hari Ini',
         },
     ];
 
     const colorClasses = {
         blue: {
-            bg: 'bg-blue-100',
-            text: 'text-blue-600',
-            border: 'border-blue-200',
+            bg: 'bg-blue-50',
+            text: 'text-blue-700',
+            border: 'border-t-blue-800',
         },
         amber: {
-            bg: 'bg-amber-100',
-            text: 'text-amber-600',
-            border: 'border-amber-200',
+            bg: 'bg-amber-50',
+            text: 'text-amber-700',
+            border: 'border-t-amber-600',
         },
         green: {
-            bg: 'bg-green-100',
-            text: 'text-green-600',
-            border: 'border-green-200',
+            bg: 'bg-emerald-50',
+            text: 'text-emerald-700',
+            border: 'border-t-emerald-600',
         },
         purple: {
-            bg: 'bg-purple-100',
-            text: 'text-purple-600',
-            border: 'border-purple-200',
+            bg: 'bg-indigo-50',
+            text: 'text-indigo-700',
+            border: 'border-t-indigo-600',
         },
     };
 
@@ -87,17 +87,17 @@ export default function DashboardStats() {
                 return (
                     <div
                         key={index}
-                        className="bg-white rounded-xl shadow-lg border border-border p-6 hover:shadow-xl transition-all hover:scale-[1.02] duration-300"
+                        className={`bg-white rounded-sm shadow-md border border-slate-300 border-t-4 ${colors.border} p-6 hover:shadow-lg hover:border-slate-400 transition-all duration-300`}
                     >
                         <div className="flex items-start justify-between mb-4">
-                            <div className={`w-12 h-12 ${colors.bg} rounded-lg flex items-center justify-center`}>
+                            <div className={`w-12 h-12 ${colors.bg} border border-slate-200 rounded-sm flex items-center justify-center shadow-inner`}>
                                 <Icon className={`w-6 h-6 ${colors.text}`} />
                             </div>
                         </div>
                         <div>
-                            <p className="text-gray-600 mb-1 font-medium">{stat.title}</p>
-                            <p className="text-2xl font-black text-gray-900 mb-1">{stat.value}</p>
-                            <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">{stat.trend}</p>
+                            <p className="text-slate-600 mb-1 font-bold text-[11px] uppercase tracking-wider">{stat.title}</p>
+                            <p className="text-3xl font-black text-slate-900 mb-1 leading-none">{stat.value}</p>
+                            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-2">{stat.trend}</p>
                         </div>
                     </div>
                 );

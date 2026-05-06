@@ -37,45 +37,47 @@ export default function MedicineRules() {
     if (loading) return <div className="animate-pulse h-20 bg-gray-100 rounded-xl"></div>;
 
     return (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4 flex items-center gap-3">
-                <Info className="w-6 h-6 text-white" />
-                <h3 className="text-white font-bold">Aturan Penitipan Obat</h3>
+        <div className="bg-white rounded-sm border border-slate-300 shadow-sm overflow-hidden h-fit">
+            <div className="bg-slate-900 px-6 py-4 flex items-center gap-3 border-b-4 border-blue-700">
+                <Info className="w-5 h-5 text-blue-400" />
+                <h3 className="text-white font-bold tracking-wider uppercase text-sm">Aturan Penitipan Barang/Obat</h3>
             </div>
             <div className="p-6">
-                <p className="text-sm text-gray-600 mb-6">
-                    Demi keamanan dan ketertiban, harap perhatikan aturan penitipan obat berikut ini:
+                <p className="text-xs text-slate-600 font-bold uppercase tracking-widest mb-6">
+                    Demi keamanan dan ketertiban, harap perhatikan aturan penyitaan berikut ini:
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {rules.map((rule) => (
                         <div
                             key={rule.id}
-                            className={`p-4 rounded-xl border flex gap-3 ${rule.is_prohibited
-                                ? 'bg-red-50 border-red-100'
-                                : 'bg-emerald-50 border-emerald-100'
+                            className={`p-4 rounded-sm border shadow-sm flex gap-3 ${rule.is_prohibited
+                                ? 'bg-red-50 border-red-200'
+                                : 'bg-emerald-50 border-emerald-200'
                                 }`}
                         >
                             {rule.is_prohibited ? (
-                                <XCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
+                                <XCircle className="w-4 h-4 text-red-600 flex-shrink-0 mt-0.5" />
                             ) : (
-                                <CheckCircle2 className="w-5 h-5 text-emerald-500 flex-shrink-0" />
+                                <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
                             )}
                             <div>
-                                <h4 className={`text-sm font-bold ${rule.is_prohibited ? 'text-red-900' : 'text-emerald-900'}`}>
+                                <h4 className={`text-xs font-black uppercase tracking-widest ${rule.is_prohibited ? 'text-red-900' : 'text-emerald-900'}`}>
                                     {rule.title}
                                 </h4>
-                                <p className={`text-xs mt-1 ${rule.is_prohibited ? 'text-red-700' : 'text-emerald-700'}`}>
+                                <p className={`text-[10px] font-bold uppercase tracking-widest mt-1 ${rule.is_prohibited ? 'text-red-700' : 'text-emerald-700'}`}>
                                     {rule.description}
                                 </p>
                             </div>
                         </div>
                     ))}
                 </div>
-                <div className="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-xl flex gap-3">
-                    <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0" />
-                    <p className="text-xs text-amber-800 leading-relaxed">
-                        <strong>PENTING:</strong> Semua obat yang dititipkan akan diperiksa terlebih dahulu oleh tim Medis Lapas sebelum diserahkan kepada Warga Binaan. Keputusan tim medis bersifat mutlak.
-                    </p>
+                <div className="mt-6 p-4 bg-amber-50 border border-amber-300 rounded-sm flex gap-4 shadow-sm items-start">
+                    <AlertCircle className="w-5 h-5 text-amber-700 flex-shrink-0 mt-0.5" />
+                    <div>
+                        <p className="text-[11px] text-amber-900 leading-relaxed font-bold uppercase tracking-wide">
+                            SEMUA OBAT/BARANG TITIPAN WAJIB MELALUI PROSEDUR PEMERIKSAAN KETAT OLEH PETUGAS MEDIS LAPAS SEBELUM DISERAHKAN KEPADA WARGA BINAAN. KEPUTUSAN TIM MEDIS BERSIFAT MUTLAK.
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>

@@ -117,142 +117,152 @@ export default function AdminScheduleManager() {
     return (
         <div className="space-y-8">
             {/* Tab Selection */}
-            <div className="flex bg-gray-100 p-1 rounded-xl w-fit">
+            <div className="flex bg-slate-100 p-1 rounded-xl w-fit border border-slate-200">
                 <button
                     onClick={() => setActiveTab('daily')}
-                    className={`px-6 py-2.5 rounded-lg font-bold text-sm transition-all flex items-center gap-2 ${activeTab === 'daily' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                    className={`px-5 py-2 rounded-lg font-bold text-sm transition-all flex items-center gap-2 ${activeTab === 'daily' ? 'bg-white text-blue-700 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-700'}`}
                 >
                     <Calendar className="w-4 h-4" />
                     Jadwal Spesial (Per Tanggal)
                 </button>
                 <button
                     onClick={() => setActiveTab('recurring')}
-                    className={`px-6 py-2.5 rounded-lg font-bold text-sm transition-all flex items-center gap-2 ${activeTab === 'recurring' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                    className={`px-5 py-2 rounded-lg font-bold text-sm transition-all flex items-center gap-2 ${activeTab === 'recurring' ? 'bg-white text-blue-700 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-700'}`}
                 >
                     <Repeat className="w-4 h-4" />
                     Jadwal Rutin (Mingguan)
                 </button>
             </div>
 
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-                    {activeTab === 'daily' ? <Plus className="w-6 h-6 text-blue-600" /> : <Repeat className="w-6 h-6 text-blue-600" />}
-                    {activeTab === 'daily' ? 'Atur Slot Kunjungan Per Tanggal' : 'Atur Jadwal Rutin Mingguan'}
-                </h3>
-                <form onSubmit={handleSubmit} className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div className="space-y-2">
-                            <label className="text-sm font-bold text-gray-700 uppercase tracking-wider">
-                                {activeTab === 'daily' ? 'Tanggal' : 'Hari'}
-                            </label>
-                            {activeTab === 'daily' ? (
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                <div className="px-6 py-4 bg-blue-50 border-b border-blue-100 flex items-center gap-3">
+                    <div className="w-8 h-8 bg-blue-100 border border-blue-200 rounded-lg flex items-center justify-center">
+                        {activeTab === 'daily' ? <Calendar className="w-4 h-4 text-blue-700" /> : <Repeat className="w-4 h-4 text-blue-700" />}
+                    </div>
+                    <h3 className="font-black text-blue-900 tracking-wider uppercase text-sm">
+                        {activeTab === 'daily' ? 'Atur Slot Kunjungan Per Tanggal' : 'Atur Jadwal Rutin Mingguan'}
+                    </h3>
+                </div>
+                <div className="p-6">
+                    <form onSubmit={handleSubmit} className="space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div className="space-y-2">
+                                <label className="text-sm font-bold text-gray-700 uppercase tracking-wider">
+                                    {activeTab === 'daily' ? 'Tanggal' : 'Hari'}
+                                </label>
+                                {activeTab === 'daily' ? (
+                                    <input
+                                        type="date"
+                                        value={newDate}
+                                        onChange={(e) => setNewDate(e.target.value)}
+                                        min={new Date().toISOString().split('T')[0]}
+                                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                                        required
+                                    />
+                                ) : (
+                                    <select
+                                        value={selectedDay}
+                                        onChange={(e) => setSelectedDay(parseInt(e.target.value))}
+                                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-bold"
+                                        required
+                                    >
+                                        <option value={1}>Senin</option>
+                                        <option value={2}>Selasa</option>
+                                        <option value={3}>Rabu</option>
+                                        <option value={4}>Kamis</option>
+                                        <option value={5}>Jumat</option>
+                                        <option value={6}>Sabtu</option>
+                                        <option value={0}>Minggu</option>
+                                    </select>
+                                )}
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-sm font-bold text-gray-700 uppercase tracking-wider">Nama Sesi (Opsional)</label>
                                 <input
-                                    type="date"
-                                    value={newDate}
-                                    onChange={(e) => setNewDate(e.target.value)}
-                                    min={new Date().toISOString().split('T')[0]}
+                                    type="text"
+                                    value={sessionName}
+                                    onChange={(e) => setSessionName(e.target.value)}
+                                    placeholder="Misal: Sesi 1 / Pagi"
+                                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-sm font-bold text-gray-700 uppercase tracking-wider">Maks. Pengunjung</label>
+                                <input
+                                    type="number"
+                                    value={maxVisitors}
+                                    onChange={(e) => setMaxVisitors(parseInt(e.target.value))}
+                                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-2">
+                                <label className="text-sm font-bold text-gray-700 uppercase tracking-wider">Jam Buka</label>
+                                <input
+                                    type="time"
+                                    value={startTime}
+                                    onChange={(e) => setStartTime(e.target.value)}
                                     className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
                                     required
                                 />
-                            ) : (
-                                <select
-                                    value={selectedDay}
-                                    onChange={(e) => setSelectedDay(parseInt(e.target.value))}
-                                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-bold"
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-sm font-bold text-gray-700 uppercase tracking-wider">Jam Tutup</label>
+                                <input
+                                    type="time"
+                                    value={endTime}
+                                    onChange={(e) => setEndTime(e.target.value)}
+                                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
                                     required
+                                />
+                            </div>
+                        </div>
+
+                        <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
+                            <label className="text-sm font-bold text-blue-800 uppercase tracking-wider block mb-3">Gunakan Pilih Sesi Cepat</label>
+                            <div className="flex flex-wrap gap-3">
+                                <button
+                                    type="button"
+                                    onClick={() => applyPreset('session1')}
+                                    className="flex-1 min-w-[200px] px-4 py-3 bg-white border-2 border-blue-200 text-blue-700 rounded-xl font-bold hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-all shadow-sm flex items-center justify-center gap-2"
                                 >
-                                    <option value={1}>Senin</option>
-                                    <option value={2}>Selasa</option>
-                                    <option value={3}>Rabu</option>
-                                    <option value={4}>Kamis</option>
-                                    <option value={5}>Jumat</option>
-                                    <option value={6}>Sabtu</option>
-                                    <option value={0}>Minggu</option>
-                                </select>
-                            )}
+                                    <Clock className="w-5 h-5" />
+                                    Pilih Sesi 1 (08:00 - 11:00)
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => applyPreset('session2')}
+                                    className="flex-1 min-w-[200px] px-4 py-3 bg-white border-2 border-emerald-200 text-emerald-700 rounded-xl font-bold hover:bg-emerald-600 hover:text-white hover:border-emerald-600 transition-all shadow-sm flex items-center justify-center gap-2"
+                                >
+                                    <Clock className="w-5 h-5" />
+                                    Pilih Sesi 2 (13:00 - 15:00)
+                                </button>
+                            </div>
                         </div>
-                        <div className="space-y-2">
-                            <label className="text-sm font-bold text-gray-700 uppercase tracking-wider">Nama Sesi (Opsional)</label>
-                            <input
-                                type="text"
-                                value={sessionName}
-                                onChange={(e) => setSessionName(e.target.value)}
-                                placeholder="Misal: Sesi 1 / Pagi"
-                                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <label className="text-sm font-bold text-gray-700 uppercase tracking-wider">Maks. Pengunjung</label>
-                            <input
-                                type="number"
-                                value={maxVisitors}
-                                onChange={(e) => setMaxVisitors(parseInt(e.target.value))}
-                                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
-                            />
-                        </div>
-                    </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="space-y-2">
-                            <label className="text-sm font-bold text-gray-700 uppercase tracking-wider">Jam Buka</label>
-                            <input
-                                type="time"
-                                value={startTime}
-                                onChange={(e) => setStartTime(e.target.value)}
-                                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
-                                required
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <label className="text-sm font-bold text-gray-700 uppercase tracking-wider">Jam Tutup</label>
-                            <input
-                                type="time"
-                                value={endTime}
-                                onChange={(e) => setEndTime(e.target.value)}
-                                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
-                                required
-                            />
-                        </div>
-                    </div>
-
-                    <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
-                        <label className="text-sm font-bold text-blue-800 uppercase tracking-wider block mb-3">Gunakan Pilih Sesi Cepat</label>
-                        <div className="flex flex-wrap gap-3">
-                            <button
-                                type="button"
-                                onClick={() => applyPreset('session1')}
-                                className="flex-1 min-w-[200px] px-4 py-3 bg-white border-2 border-blue-200 text-blue-700 rounded-xl font-bold hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-all shadow-sm flex items-center justify-center gap-2"
-                            >
-                                <Clock className="w-5 h-5" />
-                                Pilih Sesi 1 (08:00 - 11:00)
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => applyPreset('session2')}
-                                className="flex-1 min-w-[200px] px-4 py-3 bg-white border-2 border-emerald-200 text-emerald-700 rounded-xl font-bold hover:bg-emerald-600 hover:text-white hover:border-emerald-600 transition-all shadow-sm flex items-center justify-center gap-2"
-                            >
-                                <Clock className="w-5 h-5" />
-                                Pilih Sesi 2 (13:00 - 15:00)
-                            </button>
-                        </div>
-                    </div>
-
-                    <button
-                        type="submit"
-                        disabled={isSubmitting || (activeTab === 'daily' && !newDate) || !startTime || !endTime}
-                        className="w-full bg-blue-600 text-white py-4 rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-200 disabled:opacity-50 flex items-center justify-center gap-2"
-                    >
-                        {isSubmitting ? <RefreshCw className="w-5 h-5 animate-spin" /> : <Plus className="w-5 h-5" />}
-                        {isSubmitting ? 'Menyimpan...' : activeTab === 'daily' ? 'Simpan Slot Tanggal' : 'Simpan Jadwal Rutin'}
-                    </button>
-                </form>
+                        <button
+                            type="submit"
+                            disabled={isSubmitting || (activeTab === 'daily' && !newDate) || !startTime || !endTime}
+                            className="w-full bg-blue-700 text-white py-3.5 rounded-xl font-bold hover:bg-blue-800 transition-all shadow-md shadow-blue-200/50 disabled:opacity-50 flex items-center justify-center gap-2 text-sm"
+                        >
+                            {isSubmitting ? <RefreshCw className="w-5 h-5 animate-spin" /> : <Plus className="w-5 h-5" />}
+                            {isSubmitting ? 'Menyimpan...' : activeTab === 'daily' ? 'Simpan Slot Tanggal' : 'Simpan Jadwal Rutin'}
+                        </button>
+                    </form>
+                </div>
             </div>
 
-            <div className="space-y-6">
-                <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                    {activeTab === 'daily' ? <Calendar className="w-6 h-6 text-blue-600" /> : <Repeat className="w-6 h-6 text-blue-600" />}
-                    {activeTab === 'daily' ? 'Manajemen Slot Spesial (Per Tanggal)' : 'Manajemen Jadwal Rutin (Mingguan)'}
-                </h3>
+            <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                    <div className="w-7 h-7 bg-slate-100 border border-slate-200 rounded-lg flex items-center justify-center">
+                        {activeTab === 'daily' ? <Calendar className="w-3.5 h-3.5 text-slate-600" /> : <Repeat className="w-3.5 h-3.5 text-slate-600" />}
+                    </div>
+                    <h3 className="text-sm font-black text-slate-700 uppercase tracking-widest">
+                        {activeTab === 'daily' ? 'Manajemen Slot Spesial (Per Tanggal)' : 'Manajemen Jadwal Rutin (Mingguan)'}
+                    </h3>
+                </div>
 
                 {activeTab === 'daily' ? (
                     Object.keys(groupedSlots).length === 0 ? (

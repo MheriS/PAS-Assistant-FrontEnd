@@ -1,116 +1,150 @@
+import { useState, useEffect } from 'react';
 import { Clock, MapPin, Phone, Mail, CheckCircle, XCircle, ShieldAlert, Waves, BoxSelect, Info, Building2 } from 'lucide-react';
+import { getAllVisitSlots, getAllRecurringSlots } from '../utils/registrationStorage';
 
 export default function InfoPanel() {
+    const [schedule, setSchedule] = useState<{ day: string; time: string }[]>([]);
+
+    useEffect(() => {
+        const fetchSchedule = async () => {
+            try {
+                const [slots, recurring] = await Promise.all([
+                    getAllVisitSlots(),
+                    getAllRecurringSlots()
+                ]);
+                const daysOrder = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+                const dayMap: Record<string, { start: string; end: string }> = {};
+
+                recurring.filter((r: any) => r.is_active).forEach((rule: any) => {
+                    const dayName = daysOrder[rule.day_of_week];
+                    if (!dayMap[dayName]) dayMap[dayName] = { start: rule.start_time, end: rule.end_time };
+                });
+
+                const today = new Date().toISOString().split('T')[0];
+                slots.filter((s: any) => s.is_available && s.date >= today).forEach((slot: any) => {
+                    const dayName = daysOrder[new Date(slot.date).getDay()];
+                    dayMap[dayName] = { start: slot.start_time, end: slot.end_time };
+                });
+
+                const result = Object.entries(dayMap)
+                    .map(([day, t]) => ({ day, time: `${t.start.substring(0, 5)} - ${t.end.substring(0, 5)} WIB` }))
+                    .sort((a, b) => daysOrder.indexOf(a.day) - daysOrder.indexOf(b.day));
+
+                if (result.length > 0) setSchedule(result);
+            } catch (e) {
+                console.error('Error fetching schedule:', e);
+            }
+        };
+        fetchSchedule();
+    }, []);
+
     const forbiddenFoods = [
         "Makanan serbuk/bubuk", "Mie instan", "Rokok & Korek api",
         "Kacang kulit/atom", "Rambak", "Roti", "Bumbu pecel/sambal", "Permen",
         "Makanan berongga", "Cumi-cumi utuh", "Serundeng/Abon", "Perkedel & tahu",
         "Pentol/Bakso", "Gorengan", "Cabe & Bawang", "Masakan berkuah", "Minuman berwarna"
     ];
-
-    const forbiddenPersonalCare = [
-        "Parfum & Roll on", "Sikat & Pasta gigi", "Sabun cuci", "Kosmetik & Sachet"
-    ];
-
-    const forbiddenPackaging = [
-        "Kemasan Kaca", "Kaleng", "Botol Plastik"
-    ];
-
+    const forbiddenPersonalCare = ["Parfum & Roll on", "Sikat & Pasta gigi", "Sabun cuci", "Kosmetik & Sachet"];
+    const forbiddenPackaging = ["Kemasan Kaca", "Kaleng", "Botol Plastik"];
     const forbiddenMain = [
         "HP & Barang Elektronik", "Narkoba & Alkohol",
         "Senjata Tajam/Api", "Kasur dan sejenisnya", "Pakaian dibatasi maksimal 2 potong (dilarang jeans & topi)"
     ];
 
     return (
-        <div className="space-y-8">
-            {/* Header Info */}
-            <div className="bg-gradient-to-br from-blue-700 via-blue-800 to-indigo-900 text-white rounded-2xl shadow-xl p-8 relative overflow-hidden group">
-                <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                    <MapPin className="w-32 h-32 -mr-16 -mt-16" />
+        <div className="space-y-6">
+            {/* Header Info Card */}
+            <div className="bg-gradient-to-r from-blue-800 to-blue-900 text-white rounded-xl shadow-lg p-8 relative overflow-hidden">
+                <div className="absolute top-0 right-0 opacity-[0.06] pointer-events-none">
+                    <MapPin className="w-48 h-48 -mr-12 -mt-12" />
                 </div>
-                <h2 className="text-2xl font-black text-white mb-6 flex items-center gap-3">
-                    <Building2 className="w-8 h-8" />
-                    Lapas Narkotika IIA Pamekasan
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10">
-                    <div className="space-y-4">
-                        <div className="flex items-start gap-4">
-                            <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center flex-shrink-0">
-                                <MapPin className="w-5 h-5 text-blue-200" />
-                            </div>
-                            <div>
-                                <p className="text-xs font-bold text-blue-200 uppercase tracking-widest mb-1">Alamat Utama</p>
-                                <p className="text-sm font-medium leading-relaxed">Jl. Raya Pamekasan KM 5, Pamekasan, Jawa Timur 69317</p>
-                            </div>
+                <div className="flex items-center gap-3 mb-6">
+                    <div className="w-10 h-10 bg-white/10 border border-white/20 rounded-lg flex items-center justify-center">
+                        <Building2 className="w-5 h-5 text-blue-200" />
+                    </div>
+                    <h2 className="text-lg font-black text-white uppercase tracking-wider">
+                        Lapas Narkotika IIA Pamekasan
+                    </h2>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 relative z-10">
+                    <div className="flex items-start gap-3 bg-white/10 border border-white/15 rounded-lg p-4">
+                        <div className="w-9 h-9 bg-white/10 border border-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <MapPin className="w-4 h-4 text-blue-200" />
+                        </div>
+                        <div>
+                            <p className="text-[10px] font-bold text-blue-300 uppercase tracking-widest mb-1">Alamat Institusi</p>
+                            <p className="text-sm font-semibold text-white leading-relaxed">Jl. Pembina No.02, RW.01, Rw. 01, Jungcangcang, Kec. Pamekasan, Kabupaten Pamekasan, Jawa Timur 69317</p>
                         </div>
                     </div>
-                    <div className="space-y-4">
-                        <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center flex-shrink-0">
-                                <Phone className="w-5 h-5 text-blue-200" />
+                    <div className="space-y-3">
+                        <div className="flex items-center gap-3 bg-white/10 border border-white/15 rounded-lg p-3">
+                            <div className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <Phone className="w-4 h-4 text-blue-200" />
                             </div>
                             <div>
-                                <p className="text-xs font-bold text-blue-200 uppercase tracking-widest mb-1">Hubungi Kami</p>
-                                <p className="text-sm font-medium">(0324) 322xxx</p>
+                                <p className="text-[10px] font-bold text-blue-300 uppercase tracking-widest">Telepon</p>
+                                <p className="text-sm font-bold text-white">082143317094</p>
                             </div>
                         </div>
-                        <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center flex-shrink-0">
-                                <Mail className="w-5 h-5 text-blue-200" />
+                        <div className="flex items-center gap-3 bg-white/10 border border-white/15 rounded-lg p-3">
+                            <div className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <Mail className="w-4 h-4 text-blue-200" />
                             </div>
-                            <div>
-                                <p className="text-xs font-bold text-blue-200 uppercase tracking-widest mb-1">Email Resmi</p>
-                                <p className="text-sm font-medium">lapas.pamekasan@kemenkumham.go.id</p>
+                            <div className="min-w-0">
+                                <p className="text-[10px] font-bold text-blue-300 uppercase tracking-widest">Email Resmi</p>
+                                <p className="text-sm font-bold text-white break-all">lapasnarkotik.pamekasan@gmail.com</p>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                {/* Left Side: Schedule & Allowed */}
-                <div className="space-y-8">
-                    {/* Schedule */}
-                    <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden h-fit">
-                        <div className="bg-blue-50/50 px-6 py-4 border-b border-gray-100 flex items-center gap-3">
-                            <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                                <Clock className="w-4 h-4 text-blue-600" />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Left Side */}
+                <div className="space-y-5">
+                    {/* Schedule - DYNAMIC */}
+                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                        <div className="bg-blue-50 border-b border-blue-100 px-5 py-4 flex items-center gap-3">
+                            <div className="w-8 h-8 bg-blue-100 border border-blue-200 rounded-lg flex items-center justify-center">
+                                <Clock className="w-4 h-4 text-blue-700" />
                             </div>
-                            <h3 className="font-black text-gray-900 tracking-tight">Jadwal Layanan Kunjungan</h3>
+                            <h3 className="font-black text-blue-900 tracking-wider uppercase text-sm">Jadwal Layanan Kunjungan</h3>
                         </div>
-                        <div className="p-6 space-y-3">
-                            <div className="flex justify-between items-center p-3 rounded-xl bg-gray-50 border border-gray-100">
-                                <span className="font-bold text-gray-700">Selasa</span>
-                                <span className="font-black text-blue-700 bg-blue-50 px-3 py-1 rounded-lg text-sm">08:00 - 11:00 WIB</span>
-                            </div>
-                            <div className="flex justify-between items-center p-3 rounded-xl bg-gray-50 border border-gray-100">
-                                <span className="font-bold text-gray-700">Kamis</span>
-                                <span className="font-black text-blue-700 bg-blue-50 px-3 py-1 rounded-lg text-sm">08:00 - 11:00 WIB</span>
-                            </div>
+                        <div className="p-5 space-y-3">
+                            {schedule.length > 0 ? (
+                                schedule.map((s, i) => (
+                                    <div key={i} className={`flex justify-between items-center ${i < schedule.length - 1 ? 'pb-3 border-b border-slate-100' : ''}`}>
+                                        <span className="font-bold text-slate-700 uppercase text-xs tracking-widest">{s.day}</span>
+                                        <span className="font-black text-blue-800 bg-blue-50 border border-blue-200 px-3 py-1 rounded-lg text-xs">{s.time}</span>
+                                    </div>
+                                ))
+                            ) : (
+                                <p className="text-xs text-slate-400 text-center py-2 font-semibold">Memuat jadwal...</p>
+                            )}
                         </div>
                     </div>
 
                     {/* Allowed Items */}
-                    <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-                        <div className="bg-green-50/50 px-6 py-4 border-b border-gray-100 flex items-center gap-3">
-                            <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-                                <CheckCircle className="w-4 h-4 text-green-600" />
+                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                        <div className="bg-emerald-50 border-b border-emerald-100 px-5 py-4 flex items-center gap-3">
+                            <div className="w-8 h-8 bg-emerald-100 border border-emerald-200 rounded-lg flex items-center justify-center">
+                                <CheckCircle className="w-4 h-4 text-emerald-700" />
                             </div>
-                            <h3 className="font-black text-gray-900 tracking-tight">Barang yang Diperbolehkan</h3>
+                            <h3 className="font-black text-emerald-900 tracking-wider uppercase text-sm">Barang Diperbolehkan</h3>
                         </div>
-                        <div className="p-6">
-                            <ul className="grid grid-cols-1 gap-3">
+                        <div className="p-5">
+                            <ul className="space-y-2.5">
                                 {[
                                     { label: "Makanan kemasan (max 10kg)", detail: "Harus dalam segel pabrik" },
                                     { label: "Uang tunai (max Rp 1.000.000)", detail: "Untuk penitipan di kantin/layanan" },
                                     { label: "Pakaian dalam (max 2 helai)", detail: "Harus baru/bersih" },
                                     { label: "Obat dengan resep dokter", detail: "Wajib lapor petugas medis" }
                                 ].map((item, i) => (
-                                    <li key={i} className="flex gap-4 p-3 rounded-xl bg-green-50/30 border border-green-100/50">
-                                        <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
+                                    <li key={i} className="flex gap-3 p-3 rounded-lg bg-slate-50 border border-slate-100">
+                                        <CheckCircle className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
                                         <div>
-                                            <p className="text-sm font-bold text-gray-900">{item.label}</p>
-                                            <p className="text-xs text-gray-500 font-medium">{item.detail}</p>
+                                            <p className="text-xs font-bold text-slate-800 uppercase">{item.label}</p>
+                                            <p className="text-[10px] text-slate-500 font-semibold tracking-wide uppercase mt-0.5">{item.detail}</p>
                                         </div>
                                     </li>
                                 ))}
@@ -118,96 +152,98 @@ export default function InfoPanel() {
                         </div>
                     </div>
 
-                    {/* Important Info */}
-                    <div className="bg-amber-50 p-6 rounded-2xl border border-amber-200">
-                        <div className="flex gap-4">
-                            <div className="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                                <Info className="w-6 h-6 text-amber-600" />
+                    {/* Warning Banner */}
+                    <div className="bg-amber-50 border border-amber-200 rounded-xl p-5">
+                        <div className="flex gap-3">
+                            <div className="w-9 h-9 bg-amber-100 border border-amber-200 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <Info className="w-5 h-5 text-amber-700" />
                             </div>
                             <div>
-                                <p className="font-black text-amber-900 text-lg mb-1">Informasi Penting!</p>
-                                <p className="text-sm text-amber-800 leading-relaxed font-medium">
-                                    Semua barang bawaan wajib melalui pemeriksaan X-Ray dan pemeriksaan manual oleh petugas keamanan. Pelanggaran akan dikenakan sanksi sesuai aturan Lapas.
+                                <p className="font-black text-amber-900 text-xs tracking-widest uppercase mb-1">Peringatan Keamanan</p>
+                                <p className="text-xs text-amber-800 leading-relaxed font-semibold">
+                                    Semua barang bawaan wajib melalui pemeriksaan X-Ray dan manual oleh petugas. Pelanggaran dikenakan sanksi tegas sesuai aturan Lapas.
                                 </p>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                {/* Right Side: Prohibited Items - REFINED UI */}
-                <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-                    <div className="bg-red-50/50 px-6 py-4 border-b border-gray-100 flex items-center gap-3">
-                        <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
+                {/* Right Side: Prohibited Items */}
+                <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden h-fit">
+                    <div className="bg-red-50 border-b border-red-100 px-5 py-4 flex items-center gap-3">
+                        <div className="w-8 h-8 bg-red-100 border border-red-200 rounded-lg flex items-center justify-center">
                             <XCircle className="w-4 h-4 text-red-600" />
                         </div>
-                        <h3 className="font-black text-gray-900 tracking-tight">Daftar Larangan (Prohibited)</h3>
+                        <h3 className="font-black text-red-900 tracking-wider uppercase text-sm">Daftar Larangan (Prohibited)</h3>
                     </div>
 
-                    <div className="p-6 space-y-6">
-                        {/* 1. Main & Personal Care Grouped */}
+                    <div className="p-5 space-y-5">
+                        {/* Main & Personal Care */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div className="bg-gray-50/80 rounded-2xl p-4 border border-gray-100">
-                                <div className="flex items-center gap-2 text-[10px] font-black text-red-700 uppercase tracking-widest mb-3">
+                            <div className="bg-red-50 rounded-lg p-4 border border-red-100">
+                                <div className="flex items-center gap-2 text-[10px] font-black text-red-700 uppercase tracking-widest mb-3 border-b border-red-100 pb-2">
                                     <ShieldAlert className="w-3 h-3" /> Larangan Utama
                                 </div>
                                 <div className="space-y-2">
                                     {forbiddenMain.map((item, i) => (
-                                        <div key={i} className="flex items-start gap-2.5">
-                                            <div className="w-1.5 h-1.5 bg-red-400 rounded-full mt-1.5 flex-shrink-0"></div>
-                                            <span className="text-xs font-bold text-gray-700 leading-tight">{item}</span>
+                                        <div key={i} className="flex items-start gap-2">
+                                            <div className="w-1.5 h-1.5 bg-red-500 rounded-full mt-1.5 flex-shrink-0" />
+                                            <span className="text-[10px] font-bold text-slate-700 leading-tight uppercase">{item}</span>
                                         </div>
                                     ))}
                                 </div>
                             </div>
-                            <div className="bg-gray-50/80 rounded-2xl p-4 border border-gray-100">
-                                <div className="flex items-center gap-2 text-[10px] font-black text-red-700 uppercase tracking-widest mb-3">
+                            <div className="bg-slate-50 rounded-lg p-4 border border-slate-100">
+                                <div className="flex items-center gap-2 text-[10px] font-black text-slate-600 uppercase tracking-widest mb-3 border-b border-slate-200 pb-2">
                                     <Waves className="w-3 h-3" /> Perawatan Diri
                                 </div>
                                 <div className="space-y-2">
                                     {forbiddenPersonalCare.map((item, i) => (
-                                        <div key={i} className="flex items-start gap-2.5">
-                                            <div className="w-1.5 h-1.5 bg-red-300 rounded-full mt-1.5 flex-shrink-0"></div>
-                                            <span className="text-xs font-bold text-gray-700 leading-tight">{item}</span>
+                                        <div key={i} className="flex items-start gap-2">
+                                            <div className="w-1.5 h-1.5 bg-slate-400 rounded-full mt-1.5 flex-shrink-0" />
+                                            <span className="text-[10px] font-bold text-slate-700 leading-tight uppercase">{item}</span>
                                         </div>
                                     ))}
                                 </div>
                             </div>
                         </div>
 
-                        {/* 2. Packaging */}
-                        <div className="bg-red-50/30 rounded-2xl p-4 border border-red-100/50">
+                        {/* Packaging */}
+                        <div className="bg-white rounded-lg p-4 border border-dashed border-red-200">
                             <div className="flex items-center gap-2 text-[10px] font-black text-red-700 uppercase tracking-widest mb-3">
                                 <BoxSelect className="w-3 h-3" /> Jenis Kemasan Terlarang
                             </div>
                             <div className="flex flex-wrap gap-2">
                                 {forbiddenPackaging.map((item, i) => (
-                                    <span key={i} className="px-3 py-1.5 bg-white border border-red-100 rounded-lg text-xs font-black text-red-600 shadow-sm">
+                                    <span key={i} className="px-3 py-1.5 bg-red-50 border border-red-200 rounded-lg text-[10px] font-black text-red-700 uppercase">
                                         {item}
                                     </span>
                                 ))}
                             </div>
                         </div>
 
-                        {/* 3. Makanan & Minuman - Multi Column Grid */}
-                        <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-                            <div className="bg-gray-50 px-4 py-2 text-[10px] font-black text-gray-500 uppercase tracking-widest border-b border-gray-100 flex justify-between items-center">
-                                <span>Makanan & Minuman (Semua)</span>
-                                <span className="bg-red-100 text-red-700 px-2 py-0.5 rounded-full text-[9px]">{forbiddenFoods.length} Item</span>
+                        {/* Food list */}
+                        <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
+                            <div className="bg-slate-50 border-b border-slate-200 px-4 py-2.5 flex justify-between items-center">
+                                <span className="text-[10px] font-black text-slate-700 uppercase tracking-widest">Makanan & Minuman (Semua)</span>
+                                <span className="bg-red-600 text-white px-2 py-0.5 rounded-md text-[9px] font-black">{forbiddenFoods.length} Item</span>
                             </div>
                             <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5">
                                 {forbiddenFoods.map((item, i) => (
-                                    <div key={i} className="flex items-center gap-2 group">
-                                        <XCircle className="w-3 h-3 text-red-200 group-hover:text-red-400 transition-colors" />
-                                        <span className="text-[11px] font-medium text-gray-600 truncate">{item}</span>
+                                    <div key={i} className="flex items-center gap-2">
+                                        <XCircle className="w-3 h-3 text-red-400 flex-shrink-0" />
+                                        <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">{item}</span>
                                     </div>
                                 ))}
                             </div>
                         </div>
                     </div>
 
-                    <div className="bg-red-600 p-4 text-center">
-                        <p className="text-white text-[11px] font-black tracking-tight uppercase">
-                            Dilarang Keras Memasukkan Barang Titipan Secara Ilegal
+                    {/* Bottom warning bar */}
+                    <div className="bg-red-700 px-5 py-3 text-center">
+                        <p className="text-white text-[10px] font-black tracking-widest uppercase flex items-center justify-center gap-2">
+                            <ShieldAlert className="w-3.5 h-3.5 text-red-200" />
+                            Dilarang keras memasukkan barang titipan secara ilegal
                         </p>
                     </div>
                 </div>

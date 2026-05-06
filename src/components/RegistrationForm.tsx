@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Calendar, User, IdCard, FileText, CheckCircle, Search, Scan, UserCheck, UserPlus } from 'lucide-react';
+import { Calendar, User, IdCard, FileText, CheckCircle, Search, Scan, UserCheck, UserPlus, Building2 } from 'lucide-react';
 import { findVisitorByNIK, saveVisitor, type VisitorData } from '@/utils/visitorStorage';
 import { saveRegistration, getAvailableDates, getAvailableTimes, searchWBP, type VisitSlot } from '@/utils/registrationStorage';
 import MedicineRules from './MedicineRules';
@@ -21,27 +21,22 @@ interface FormData {
     visitorGender: string;
 }
 
+// Shared input/label styles
+const inputCls = "w-full px-4 py-2.5 border border-slate-300 rounded-lg text-sm text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 transition-colors placeholder:text-slate-400";
+const labelCls = "block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5";
+const disabledInputCls = "w-full px-4 py-2.5 border border-slate-200 rounded-lg text-sm bg-slate-50 text-slate-500 cursor-not-allowed";
+
 export default function RegistrationForm() {
     const [nikInput, setNikInput] = useState('');
     const [nikChecked, setNikChecked] = useState(false);
     const [isReturningVisitor, setIsReturningVisitor] = useState(false);
     const [isSearching, setIsSearching] = useState(false);
-    const [regNumber, setRegNumber] = useState(''); // Store reg number for success screen
+    const [regNumber, setRegNumber] = useState('');
     const [formData, setFormData] = useState<FormData>({
-        visitorName: '',
-        visitorId: '',
-        visitorPhone: '',
-        visitorAddress: '',
-        inmateName: '',
-        relationship: '',
-        visitDate: '',
-        visitTime: '',
-        roomBlock: '',
-        pengikutLaki: 0,
-        pengikutPerempuan: 0,
-        pengikutAnak: 0,
-        jumlahPengikut: 0,
-        visitorGender: '',
+        visitorName: '', visitorId: '', visitorPhone: '', visitorAddress: '',
+        inmateName: '', relationship: '', visitDate: '', visitTime: '',
+        roomBlock: '', pengikutLaki: 0, pengikutPerempuan: 0, pengikutAnak: 0,
+        jumlahPengikut: 0, visitorGender: '',
     });
     const [wbpSuggestions, setWbpSuggestions] = useState<any[]>([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
@@ -52,9 +47,7 @@ export default function RegistrationForm() {
     const [isLoadingSlots, setIsLoadingSlots] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    useEffect(() => {
-        fetchDates();
-    }, []);
+    useEffect(() => { fetchDates(); }, []);
 
     const fetchDates = async () => {
         const dates = await getAvailableDates();
@@ -74,57 +67,29 @@ export default function RegistrationForm() {
     };
 
     const handleNikSearch = async () => {
-        if (!nikInput || nikInput.length !== 16) {
-            alert('Masukkan NIK dengan benar (16 digit)');
-            return;
-        }
-
+        if (!nikInput || nikInput.length !== 16) { alert('Masukkan NIK dengan benar (16 digit)'); return; }
         setIsSearching(true);
-
-        // Simulate scanning/searching animation
         try {
             const existingVisitor = await findVisitorByNIK(nikInput);
-
             if (existingVisitor) {
-                // Auto-fill data for returning visitor
-                setFormData({
-                    ...formData,
-                    visitorId: existingVisitor.nik,
-                    visitorName: existingVisitor.name,
-                    visitorPhone: existingVisitor.phone,
-                    visitorAddress: existingVisitor.address,
-                    relationship: existingVisitor.relationship,
-                    visitorGender: existingVisitor.gender || '',
-                });
+                setFormData({ ...formData, visitorId: existingVisitor.nik, visitorName: existingVisitor.name, visitorPhone: existingVisitor.phone, visitorAddress: existingVisitor.address, relationship: existingVisitor.relationship, visitorGender: existingVisitor.gender || '' });
                 setIsReturningVisitor(true);
             } else {
-                // New visitor - set NIK only
-                setFormData({
-                    ...formData,
-                    visitorId: nikInput,
-                });
+                setFormData({ ...formData, visitorId: nikInput });
                 setIsReturningVisitor(false);
             }
-
             setNikChecked(true);
-        } catch (error) {
-            alert('Gagal mencari data pengunjung');
-        } finally {
-            setIsSearching(false);
-        }
+        } catch { alert('Gagal mencari data pengunjung'); }
+        finally { setIsSearching(false); }
     };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-        setFormData({
-            ...formData,
-            [e.target.name]: e.target.value,
-        });
+        setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
     const handleWbpChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value;
         setFormData({ ...formData, inmateName: value });
-
         if (value.length > 2) {
             const results = await searchWBP(value);
             setWbpSuggestions(results);
@@ -136,326 +101,197 @@ export default function RegistrationForm() {
     };
 
     const selectWbp = (wbp: any) => {
-        setFormData({
-            ...formData,
-            inmateName: wbp.nama,
-            roomBlock: `${wbp.blok} / ${wbp.kamar}`,
-        });
+        setFormData({ ...formData, inmateName: wbp.nama, roomBlock: `${wbp.blok} / ${wbp.kamar}` });
         setSelectedWbpPhoto(wbp.foto);
         setShowSuggestions(false);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-
         if (isSubmitting) return;
-
         setIsSubmitting(true);
-
-        // Save visitor data to storage
         try {
-            const visitorData: VisitorData = {
-                nik: formData.visitorId,
-                name: formData.visitorName,
-                phone: formData.visitorPhone,
-                address: formData.visitorAddress,
-                relationship: formData.relationship,
-                gender: formData.visitorGender,
-            };
-
+            const visitorData: VisitorData = { nik: formData.visitorId, name: formData.visitorName, phone: formData.visitorPhone, address: formData.visitorAddress, relationship: formData.relationship, gender: formData.visitorGender };
             await saveVisitor(visitorData);
-
-            // Save full registration data
-            const registration = await saveRegistration({
-                nik: formData.visitorId,
-                visitorName: formData.visitorName,
-                visitorPhone: formData.visitorPhone,
-                visitorAddress: formData.visitorAddress,
-                inmateName: formData.inmateName,
-                relationship: formData.relationship,
-                visitDate: formData.visitDate,
-                visitTime: formData.visitTime,
-                roomBlock: formData.roomBlock,
-                pengikutLaki: formData.pengikutLaki,
-                pengikutPerempuan: formData.pengikutPerempuan,
-                pengikutAnak: formData.pengikutAnak,
-                jumlahPengikut: formData.jumlahPengikut,
-                visitorGender: formData.visitorGender,
-            });
-
+            const registration = await saveRegistration({ nik: formData.visitorId, visitorName: formData.visitorName, visitorPhone: formData.visitorPhone, visitorAddress: formData.visitorAddress, inmateName: formData.inmateName, relationship: formData.relationship, visitDate: formData.visitDate, visitTime: formData.visitTime, roomBlock: formData.roomBlock, pengikutLaki: formData.pengikutLaki, pengikutPerempuan: formData.pengikutPerempuan, pengikutAnak: formData.pengikutAnak, jumlahPengikut: formData.jumlahPengikut, visitorGender: formData.visitorGender });
             setRegNumber(registration.id);
             setSubmitted(true);
             setIsSubmitting(false);
-
             setTimeout(() => {
-                setSubmitted(false);
-                setNikChecked(false);
-                setNikInput('');
-                setIsReturningVisitor(false);
-                setFormData({
-                    visitorName: '',
-                    visitorId: '',
-                    visitorPhone: '',
-                    visitorAddress: '',
-                    inmateName: '',
-                    relationship: '',
-                    visitDate: '',
-                    visitTime: '',
-                    roomBlock: '',
-                    pengikutLaki: 0,
-                    pengikutPerempuan: 0,
-                    pengikutAnak: 0,
-                    jumlahPengikut: 0,
-                    visitorGender: '',
-                });
+                setSubmitted(false); setNikChecked(false); setNikInput(''); setIsReturningVisitor(false);
+                setFormData({ visitorName: '', visitorId: '', visitorPhone: '', visitorAddress: '', inmateName: '', relationship: '', visitDate: '', visitTime: '', roomBlock: '', pengikutLaki: 0, pengikutPerempuan: 0, pengikutAnak: 0, jumlahPengikut: 0, visitorGender: '' });
             }, 5000);
-        } catch (error) {
-            console.error('Registration error:', error);
+        } catch {
             alert('Terjadi kesalahan saat menyimpan data');
             setIsSubmitting(false);
         }
     };
 
     const handleResetNik = () => {
-        setNikChecked(false);
-        setNikInput('');
-        setIsReturningVisitor(false);
-        setSelectedWbpPhoto(null);
-        setFormData({
-            visitorName: '',
-            visitorId: '',
-            visitorPhone: '',
-            visitorAddress: '',
-            inmateName: '',
-            relationship: '',
-            visitDate: '',
-            visitTime: '',
-            roomBlock: '',
-            pengikutLaki: 0,
-            pengikutPerempuan: 0,
-            pengikutAnak: 0,
-            jumlahPengikut: 0,
-            visitorGender: '',
-        });
+        setNikChecked(false); setNikInput(''); setIsReturningVisitor(false); setSelectedWbpPhoto(null);
+        setFormData({ visitorName: '', visitorId: '', visitorPhone: '', visitorAddress: '', inmateName: '', relationship: '', visitDate: '', visitTime: '', roomBlock: '', pengikutLaki: 0, pengikutPerempuan: 0, pengikutAnak: 0, jumlahPengikut: 0, visitorGender: '' });
     };
 
+    // ── Success Screen ───────────────────────────────────────────────────────
     if (submitted) {
         return (
-            <div className="bg-white rounded-xl shadow-lg p-8 text-center">
-                <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <CheckCircle className="w-12 h-12 text-green-600" />
+            <div className="bg-white rounded-xl shadow-md border border-slate-200 border-t-4 border-t-emerald-600 p-10 text-center max-w-lg mx-auto">
+                <div className="w-16 h-16 bg-emerald-50 border border-emerald-200 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <CheckCircle className="w-8 h-8 text-emerald-600" />
                 </div>
-                <h2 className="text-green-600 mb-2">Pendaftaran Berhasil!</h2>
-                <p className="text-gray-600">
-                    Nomor registrasi Anda: <strong>{regNumber}</strong>
-                </p>
-                <p className="text-gray-600 mt-2">
-                    Silakan cek email/SMS untuk konfirmasi kunjungan.
+                <h2 className="text-emerald-800 font-black uppercase tracking-wider mb-2 text-xl">Pendaftaran Berhasil!</h2>
+                <div className="bg-slate-50 border border-slate-200 p-5 rounded-xl my-5 text-center">
+                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-2">Nomor Registrasi Kunjungan</p>
+                    <p className="text-2xl font-mono text-blue-800 font-black tracking-widest">{regNumber}</p>
+                </div>
+                <p className="text-xs text-slate-500 font-semibold uppercase tracking-wide mt-2">
+                    Simpan nomor ini untuk pengecekan status kunjungan Anda.
                 </p>
             </div>
         );
     }
 
+    // ── Main Form ────────────────────────────────────────────────────────────
     return (
         <div className="space-y-6">
-            <MedicineRules />
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 px-6 py-8 md:p-10 relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-6 opacity-[0.03] pointer-events-none">
+                    <Building2 className="w-48 h-48 -mr-10 -mt-10" />
+                </div>
 
-            <div className="bg-white rounded-xl shadow-lg p-6">
-                <div className="mb-6">
-                    <h2 className="text-gray-900 mb-1">Formulir Pendaftaran Kunjungan</h2>
-                    <p className="text-gray-600">
-                        {!nikChecked ? 'Masukkan NIK untuk memulai pendaftaran' : 'Lengkapi data berikut untuk mendaftar kunjungan'}
-                    </p>
+                {/* Header */}
+                <div className="mb-8 pb-5 border-b border-slate-200 relative z-10 flex items-center gap-4">
+                    <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <FileText className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                        <h2 className="text-lg font-black text-slate-900 tracking-tight uppercase">Formulir Pendaftaran Kunjungan</h2>
+                        <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
+                            {!nikChecked ? 'Masukkan NIK untuk memulai pendaftaran' : 'Lengkapi formulir data di bawah ini'}
+                        </p>
+                    </div>
                 </div>
 
                 {!nikChecked ? (
-                    // NIK Input Step - First Step
-                    <div className="space-y-6">
-                        <div className="bg-gradient-to-br from-blue-50 to-emerald-50 border-2 border-blue-200 rounded-xl p-6">
-                            <div className="flex items-center gap-3 mb-4">
-                                <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-emerald-600 rounded-lg flex items-center justify-center">
-                                    <Scan className="w-6 h-6 text-white" />
+                    // ── Step 1: NIK Input ─────────────────────────────────────────────────
+                    <div className="space-y-5">
+                        <MedicineRules />
+                        <div className="bg-blue-50 border border-blue-200 border-l-4 border-l-blue-700 rounded-xl p-6">
+                            <div className="flex items-center gap-3 mb-6 pb-4 border-b border-blue-100">
+                                <div className="w-10 h-10 bg-blue-700 rounded-lg flex items-center justify-center">
+                                    <Scan className="w-5 h-5 text-white" />
                                 </div>
                                 <div>
-                                    <h3 className="text-gray-900 font-bold">Scan / Cek NIK Pengunjung</h3>
-                                    <p className="text-sm text-gray-600">Masukkan NIK untuk cek data pengunjung</p>
+                                    <h3 className="text-slate-900 font-black uppercase tracking-wider text-sm">Validasi NIK Pengunjung</h3>
+                                    <p className="text-[10px] text-blue-600 font-bold uppercase tracking-widest mt-0.5">Sistem Pemeriksaan Identitas Kependudukan</p>
                                 </div>
                             </div>
-
                             <div className="space-y-4">
                                 <div>
-                                    <label htmlFor="nikInput" className="text-gray-700 font-medium block mb-2">
-                                        NIK (Nomor Induk Kependudukan) *
-                                    </label>
+                                    <label htmlFor="nikInput" className={labelCls}>Nomor Induk Kependudukan (16 Digit) *</label>
                                     <input
-                                        type="text"
-                                        id="nikInput"
-                                        value={nikInput}
-                                        onChange={(e) => {
-                                            const value = e.target.value.replace(/\D/g, '');
-                                            if (value.length <= 16) {
-                                                setNikInput(value);
-                                            }
-                                        }}
-                                        maxLength={16}
-                                        placeholder="Masukkan 16 digit NIK"
-                                        className="w-full px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        type="text" id="nikInput" value={nikInput}
+                                        onChange={(e) => { const v = e.target.value.replace(/\D/g, ''); if (v.length <= 16) setNikInput(v); }}
+                                        maxLength={16} placeholder="Ketikkan NIK sesuai KTP..."
+                                        className={`${inputCls} text-lg font-mono tracking-widest`}
                                         disabled={isSearching}
                                     />
-                                    <p className="text-sm text-gray-500 mt-1">
-                                        {nikInput.length}/16 digit
-                                    </p>
+                                    <div className="flex justify-between mt-1.5">
+                                        <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Status input:</span>
+                                        <span className={`text-[10px] font-mono font-bold ${nikInput.length === 16 ? 'text-emerald-600' : 'text-slate-400'}`}>
+                                            [{nikInput.length}/16 DIGIT]
+                                        </span>
+                                    </div>
                                 </div>
-
                                 <button
-                                    type="button"
-                                    onClick={handleNikSearch}
+                                    type="button" onClick={handleNikSearch}
                                     disabled={nikInput.length !== 16 || isSearching}
-                                    className={`w-full py-3 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2 ${nikInput.length === 16 && !isSearching
-                                        ? 'bg-gradient-to-r from-blue-600 to-emerald-600 text-white hover:shadow-lg hover:scale-[1.02]'
-                                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                                        }`}
+                                    className={`w-full py-3.5 rounded-lg font-black uppercase tracking-widest text-xs transition-all flex items-center justify-center gap-3 ${nikInput.length === 16 && !isSearching
+                                        ? 'bg-blue-700 text-white hover:bg-blue-800 shadow-md shadow-blue-200'
+                                        : 'bg-slate-200 text-slate-400 cursor-not-allowed'}`}
                                 >
                                     {isSearching ? (
-                                        <>
-                                            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                                            Mencari Data...
-                                        </>
+                                        <><div className="w-4 h-4 border-2 border-blue-300 border-t-transparent rounded-full animate-spin" />Mencari Data Identitas...</>
                                     ) : (
-                                        <>
-                                            <Search className="w-5 h-5" />
-                                            Scan / Cari Data Pengunjung
-                                        </>
+                                        <><Search className="w-4 h-4" />Proses Verifikasi NIK</>
                                     )}
                                 </button>
                             </div>
                         </div>
 
-                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                            <div className="flex gap-2">
-                                <FileText className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                                <div>
-                                    <p className="text-blue-900 font-medium">Informasi:</p>
-                                    <ul className="text-sm text-blue-800 mt-2 space-y-1 list-disc list-inside">
-                                        <li>Jika NIK sudah terdaftar, data akan terisi otomatis</li>
-                                        <li>Jika NIK baru, Anda akan mengisi data lengkap</li>
-                                        <li>Pastikan NIK sesuai dengan KTP Anda</li>
-                                    </ul>
-                                </div>
+                        <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 flex gap-4 items-start">
+                            <div className="w-9 h-9 bg-slate-200 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <FileText className="w-4 h-4 text-slate-600" />
+                            </div>
+                            <div>
+                                <p className="text-xs font-black text-slate-700 uppercase tracking-widest mb-2">Panduan Pengisian</p>
+                                <ul className="text-xs text-slate-500 space-y-1.5 font-medium leading-relaxed">
+                                    {[
+                                        'Sistem akan otomatis mendeteksi jika NIK sudah pernah terdaftar pada kunjungan sebelumnya.',
+                                        'Jika NIK baru, formulir pendaftaran lengkap akan otomatis terbuka.',
+                                        'Pastikan NIK sesuai dengan Kartu Tanda Penduduk (KTP) fisik.',
+                                    ].map((t, i) => (
+                                        <li key={i} className="flex items-start gap-2"><div className="w-1.5 h-1.5 bg-blue-400 rounded-full mt-1.5 flex-shrink-0" />{t}</li>
+                                    ))}
+                                </ul>
                             </div>
                         </div>
                     </div>
                 ) : (
-                    // Full Form - After NIK is checked
-                    <form onSubmit={handleSubmit} className="space-y-6">
-                        {/* Status indicator */}
-                        <div className={`border-2 rounded-lg p-4 ${isReturningVisitor ? 'bg-green-50 border-green-300' : 'bg-blue-50 border-blue-300'}`}>
-                            <div className="flex items-center gap-3">
-                                <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${isReturningVisitor ? 'bg-green-600' : 'bg-blue-600'}`}>
-                                    {isReturningVisitor ? (
-                                        <UserCheck className="w-6 h-6 text-white" />
-                                    ) : (
-                                        <UserPlus className="w-6 h-6 text-white" />
-                                    )}
-                                </div>
-                                <div className="flex-1">
-                                    <h3 className={`font-bold ${isReturningVisitor ? 'text-green-900' : 'text-blue-900'}`}>
-                                        {isReturningVisitor ? 'Pengunjung Terdaftar!' : 'Pengunjung Baru'}
-                                    </h3>
-                                    <p className={`text-sm ${isReturningVisitor ? 'text-green-700' : 'text-blue-700'}`}>
-                                        {isReturningVisitor
-                                            ? 'Data Anda telah terisi otomatis. Silakan periksa dan lanjutkan.'
-                                            : 'NIK belum terdaftar. Silakan lengkapi data Anda di bawah.'}
-                                    </p>
-                                </div>
-                                <button
-                                    type="button"
-                                    onClick={handleResetNik}
-                                    className="text-sm text-gray-600 hover:text-gray-900 underline"
-                                >
-                                    Ganti NIK
-                                </button>
+                    // ── Step 2: Full Form ────────────────────────────────────────────────
+                    <form onSubmit={handleSubmit} className="space-y-7">
+
+                        {/* Status Banner */}
+                        <div className={`rounded-xl p-4 border flex items-center gap-4 ${isReturningVisitor ? 'bg-emerald-50 border-emerald-200 border-l-4 border-l-emerald-600' : 'bg-blue-50 border-blue-200 border-l-4 border-l-blue-600'}`}>
+                            <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${isReturningVisitor ? 'bg-emerald-600' : 'bg-blue-700'}`}>
+                                {isReturningVisitor ? <UserCheck className="w-5 h-5 text-white" /> : <UserPlus className="w-5 h-5 text-white" />}
                             </div>
+                            <div className="flex-1">
+                                <h3 className={`font-black uppercase tracking-widest text-sm ${isReturningVisitor ? 'text-emerald-900' : 'text-blue-900'}`}>
+                                    {isReturningVisitor ? 'Pengunjung Terdaftar' : 'Pengunjung Baru'}
+                                </h3>
+                                <p className={`text-[11px] font-semibold tracking-wide mt-0.5 ${isReturningVisitor ? 'text-emerald-700' : 'text-blue-700'}`}>
+                                    {isReturningVisitor ? 'Data ditemukan. Silakan periksa kembali.' : 'NIK belum terdaftar. Harap lengkapi data.'}
+                                </p>
+                            </div>
+                            <button type="button" onClick={handleResetNik}
+                                className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-[10px] font-black uppercase tracking-widest text-slate-600 hover:bg-slate-50 transition-colors shadow-sm">
+                                Ganti NIK
+                            </button>
                         </div>
 
+                        {/* Section: Data Pengunjung */}
                         <div>
-                            <h3 className="text-gray-900 mb-4 flex items-center gap-2">
-                                <User className="w-5 h-5 text-blue-600" />
-                                Data Pengunjung
-                            </h3>
+                            <div className="flex items-center gap-2 mb-4 pb-2 border-b border-slate-200">
+                                <div className="w-7 h-7 bg-slate-100 border border-slate-200 rounded-lg flex items-center justify-center">
+                                    <User className="w-3.5 h-3.5 text-slate-600" />
+                                </div>
+                                <h3 className="text-slate-800 font-black uppercase tracking-widest text-sm">Data Identitas Pengunjung</h3>
+                            </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
-                                    <label htmlFor="visitorId" className="text-gray-700 block mb-2">
-                                        NIK (No. KTP) *
-                                    </label>
-                                    <input
-                                        type="text"
-                                        id="visitorId"
-                                        name="visitorId"
-                                        value={formData.visitorId}
-                                        disabled
-                                        className="w-full px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg cursor-not-allowed"
-                                    />
+                                    <label htmlFor="visitorId" className={labelCls}>NIK (No. KTP) *</label>
+                                    <input type="text" id="visitorId" name="visitorId" value={formData.visitorId} disabled className={disabledInputCls} />
                                 </div>
                                 <div>
-                                    <label htmlFor="visitorName" className="text-gray-700 block mb-2">
-                                        Nama Lengkap *
-                                    </label>
-                                    <input
-                                        type="text"
-                                        id="visitorName"
-                                        name="visitorName"
-                                        value={formData.visitorName}
-                                        onChange={handleChange}
-                                        required
-                                        className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        placeholder="Nama lengkap sesuai KTP"
-                                    />
+                                    <label htmlFor="visitorName" className={labelCls}>Nama Lengkap *</label>
+                                    <input type="text" id="visitorName" name="visitorName" value={formData.visitorName} onChange={handleChange} required className={inputCls} placeholder="Nama lengkap sesuai KTP" />
                                 </div>
                                 <div>
-                                    <label htmlFor="visitorPhone" className="text-gray-700 block mb-2">
-                                        No. Telepon *
-                                    </label>
-                                    <input
-                                        type="tel"
-                                        id="visitorPhone"
-                                        name="visitorPhone"
-                                        value={formData.visitorPhone}
-                                        onChange={handleChange}
-                                        required
-                                        className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        placeholder="08xxx"
-                                    />
+                                    <label htmlFor="visitorPhone" className={labelCls}>No. Telepon *</label>
+                                    <input type="tel" id="visitorPhone" name="visitorPhone" value={formData.visitorPhone} onChange={handleChange} required className={inputCls} placeholder="08xxx" />
                                 </div>
                                 <div>
-                                    <label htmlFor="visitorGender" className="text-gray-700 block mb-2">
-                                        Jenis Kelamin *
-                                    </label>
-                                    <select
-                                        id="visitorGender"
-                                        name="visitorGender"
-                                        value={formData.visitorGender}
-                                        onChange={handleChange}
-                                        required
-                                        className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    >
+                                    <label htmlFor="visitorGender" className={labelCls}>Jenis Kelamin *</label>
+                                    <select id="visitorGender" name="visitorGender" value={formData.visitorGender} onChange={handleChange} required className={inputCls}>
                                         <option value="">Pilih jenis kelamin</option>
                                         <option value="Laki-laki">Laki-laki</option>
                                         <option value="Perempuan">Perempuan</option>
                                     </select>
                                 </div>
                                 <div>
-                                    <label htmlFor="relationship" className="text-gray-700 block mb-2">
-                                        Hubungan dengan WBP *
-                                    </label>
-                                    <select
-                                        id="relationship"
-                                        name="relationship"
-                                        value={formData.relationship}
-                                        onChange={handleChange}
-                                        required
-                                        className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    >
+                                    <label htmlFor="relationship" className={labelCls}>Hubungan dengan WBP *</label>
+                                    <select id="relationship" name="relationship" value={formData.relationship} onChange={handleChange} required className={inputCls}>
                                         <option value="">Pilih hubungan</option>
                                         <option value="keluarga">Keluarga Inti</option>
                                         <option value="saudara">Saudara</option>
@@ -465,196 +301,97 @@ export default function RegistrationForm() {
                                 </div>
                             </div>
                             <div className="mt-4">
-                                <label htmlFor="visitorAddress" className="text-gray-700 block mb-2">
-                                    Alamat Lengkap *
-                                </label>
-                                <textarea
-                                    id="visitorAddress"
-                                    name="visitorAddress"
-                                    value={formData.visitorAddress}
-                                    onChange={handleChange}
-                                    required
-                                    rows={3}
-                                    className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    placeholder="Alamat sesuai KTP"
-                                />
+                                <label htmlFor="visitorAddress" className={labelCls}>Alamat Lengkap *</label>
+                                <textarea id="visitorAddress" name="visitorAddress" value={formData.visitorAddress} onChange={handleChange} required rows={3} className={inputCls} placeholder="Alamat sesuai KTP" />
                             </div>
                         </div>
 
-                        <div className="border-t border-border pt-6">
-                            <h3 className="text-gray-900 mb-4 flex items-center gap-2">
-                                <UserPlus className="w-5 h-5 text-blue-600" />
-                                Data Pengikut (Jika ada)
-                            </h3>
-                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                                <div>
-                                    <label htmlFor="pengikutLaki" className="text-gray-700 block mb-2 text-sm">
-                                        Laki-laki
-                                    </label>
-                                    <input
-                                        type="number"
-                                        id="pengikutLaki"
-                                        name="pengikutLaki"
-                                        min="0"
-                                        value={formData.pengikutLaki}
-                                        onChange={(e) => {
-                                            const val = parseInt(e.target.value) || 0;
-                                            setFormData(prev => ({
-                                                ...prev,
-                                                pengikutLaki: val,
-                                                jumlahPengikut: val + prev.pengikutPerempuan + prev.pengikutAnak
-                                            }));
-                                        }}
-                                        className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    />
+                        {/* Section: Pengikut */}
+                        <div className="pt-2 border-t border-slate-200">
+                            <div className="flex items-center gap-2 mb-4 pb-2 border-b border-slate-200">
+                                <div className="w-7 h-7 bg-slate-100 border border-slate-200 rounded-lg flex items-center justify-center">
+                                    <UserPlus className="w-3.5 h-3.5 text-slate-600" />
                                 </div>
+                                <h3 className="text-slate-800 font-black uppercase tracking-widest text-sm">Data Pengikut (Anggota Keluarga Lain)</h3>
+                            </div>
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                {[
+                                    { id: 'pengikutLaki', label: 'Laki-laki', key: 'pengikutLaki' as const },
+                                    { id: 'pengikutPerempuan', label: 'Perempuan', key: 'pengikutPerempuan' as const },
+                                    { id: 'pengikutAnak', label: 'Anak-anak', key: 'pengikutAnak' as const },
+                                ].map(f => (
+                                    <div key={f.id}>
+                                        <label htmlFor={f.id} className={labelCls}>{f.label}</label>
+                                        <input type="number" id={f.id} name={f.id} min="0" value={formData[f.key]}
+                                            onChange={(e) => {
+                                                const val = parseInt(e.target.value) || 0;
+                                                setFormData(prev => ({
+                                                    ...prev, [f.key]: val,
+                                                    jumlahPengikut: (f.key === 'pengikutLaki' ? val : prev.pengikutLaki) + (f.key === 'pengikutPerempuan' ? val : prev.pengikutPerempuan) + (f.key === 'pengikutAnak' ? val : prev.pengikutAnak)
+                                                }));
+                                            }}
+                                            className={inputCls}
+                                        />
+                                    </div>
+                                ))}
                                 <div>
-                                    <label htmlFor="pengikutPerempuan" className="text-gray-700 block mb-2 text-sm">
-                                        Perempuan
-                                    </label>
-                                    <input
-                                        type="number"
-                                        id="pengikutPerempuan"
-                                        name="pengikutPerempuan"
-                                        min="0"
-                                        value={formData.pengikutPerempuan}
-                                        onChange={(e) => {
-                                            const val = parseInt(e.target.value) || 0;
-                                            setFormData(prev => ({
-                                                ...prev,
-                                                pengikutPerempuan: val,
-                                                jumlahPengikut: prev.pengikutLaki + val + prev.pengikutAnak
-                                            }));
-                                        }}
-                                        className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    />
-                                </div>
-                                <div>
-                                    <label htmlFor="pengikutAnak" className="text-gray-700 block mb-2 text-sm">
-                                        Anak-anak
-                                    </label>
-                                    <input
-                                        type="number"
-                                        id="pengikutAnak"
-                                        name="pengikutAnak"
-                                        min="0"
-                                        value={formData.pengikutAnak}
-                                        onChange={(e) => {
-                                            const val = parseInt(e.target.value) || 0;
-                                            setFormData(prev => ({
-                                                ...prev,
-                                                pengikutAnak: val,
-                                                jumlahPengikut: prev.pengikutLaki + prev.pengikutPerempuan + val
-                                            }));
-                                        }}
-                                        className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    />
-                                </div>
-                                <div>
-                                    <label htmlFor="jumlahPengikut" className="text-gray-700 block mb-2 text-sm">
-                                        Total Pengikut
-                                    </label>
-                                    <input
-                                        type="number"
-                                        id="jumlahPengikut"
-                                        name="jumlahPengikut"
-                                        value={formData.jumlahPengikut}
-                                        readOnly
-                                        className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg font-bold text-blue-700"
-                                    />
+                                    <label htmlFor="jumlahPengikut" className={labelCls}>Total Pengikut</label>
+                                    <input type="number" id="jumlahPengikut" name="jumlahPengikut" value={formData.jumlahPengikut} readOnly className={`${disabledInputCls} font-black text-blue-700`} />
                                 </div>
                             </div>
                         </div>
 
-                        <div className="border-t border-border pt-6">
-                            <h3 className="text-gray-900 mb-4 flex items-center gap-2">
-                                <IdCard className="w-5 h-5 text-blue-600" />
-                                Data Warga Binaan (WBP)
-                            </h3>
+                        {/* Section: Data WBP */}
+                        <div className="pt-2 border-t border-slate-200">
+                            <div className="flex items-center gap-2 mb-4 pb-2 border-b border-slate-200">
+                                <div className="w-7 h-7 bg-slate-100 border border-slate-200 rounded-lg flex items-center justify-center">
+                                    <IdCard className="w-3.5 h-3.5 text-slate-600" />
+                                </div>
+                                <h3 className="text-slate-800 font-black uppercase tracking-widest text-sm">Data Warga Binaan Pemasyarakatan (WBP)</h3>
+                            </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="relative">
-                                    <label htmlFor="inmateName" className="text-gray-700 block mb-2">
-                                        Nama WBP *
-                                    </label>
-                                    <input
-                                        type="text"
-                                        id="inmateName"
-                                        name="inmateName"
-                                        value={formData.inmateName}
-                                        onChange={handleWbpChange}
-                                        autoComplete="off"
-                                        required
-                                        className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        placeholder="Ketik nama warga binaan..."
-                                    />
+                                    <label htmlFor="inmateName" className={labelCls}>Nama WBP *</label>
+                                    <input type="text" id="inmateName" name="inmateName" value={formData.inmateName} onChange={handleWbpChange} autoComplete="off" required className={inputCls} placeholder="Ketik nama warga binaan..." />
                                     {showSuggestions && wbpSuggestions.length > 0 && (
-                                        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-xl max-h-60 overflow-y-auto">
-                                            {wbpSuggestions.map((wbp, index) => (
-                                                <div
-                                                    key={index}
-                                                    onClick={() => selectWbp(wbp)}
-                                                    className="px-4 py-3 hover:bg-blue-50 cursor-pointer border-b last:border-b-0 border-gray-100 transition-colors"
-                                                >
-                                                    <p className="font-bold text-gray-900">{wbp.nama}</p>
-                                                    <p className="text-xs text-blue-600 font-medium">{wbp.blok} / {wbp.kamar}</p>
+                                        <div className="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-xl max-h-60 overflow-y-auto">
+                                            {wbpSuggestions.map((wbp, i) => (
+                                                <div key={i} onClick={() => selectWbp(wbp)} className="px-4 py-3 hover:bg-blue-50 cursor-pointer border-b last:border-b-0 border-slate-100 transition-colors">
+                                                    <p className="font-bold text-slate-900 text-sm">{wbp.nama}</p>
+                                                    <p className="text-xs text-blue-600 font-semibold mt-0.5">{wbp.blok} / {wbp.kamar}</p>
                                                 </div>
                                             ))}
                                         </div>
                                     )}
-
                                     {selectedWbpPhoto && (
-                                        <div className="mt-4 flex items-center gap-4 p-4 bg-blue-50 border border-blue-100 rounded-xl animate-in fade-in slide-in-from-top-2 duration-300">
-                                            <div className="relative group">
-                                                <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-600 to-emerald-600 rounded-lg blur opacity-30 group-hover:opacity-100 transition duration-500"></div>
-                                                <img
-                                                    src={selectedWbpPhoto}
-                                                    alt="WBP Photo"
-                                                    className="relative w-24 h-24 object-cover rounded-lg border-2 border-white shadow-md"
-                                                />
-                                            </div>
+                                        <div className="mt-4 flex items-center gap-4 p-4 bg-blue-50 border border-blue-200 rounded-xl">
+                                            <img src={selectedWbpPhoto} alt="WBP Photo" className="w-20 h-20 object-cover rounded-lg border-2 border-white shadow-md" />
                                             <div>
-                                                <p className="text-sm font-medium text-blue-800">Foto Teridentifikasi</p>
-                                                <p className="text-xs text-blue-600 mt-1">Pastikan wajah sesuai dengan warga binaan yang ingin dikunjungi.</p>
+                                                <p className="text-sm font-bold text-blue-800">Foto Teridentifikasi</p>
+                                                <p className="text-xs text-blue-600 mt-1">Pastikan wajah sesuai dengan warga binaan yang dituju.</p>
                                             </div>
                                         </div>
                                     )}
                                 </div>
                                 <div>
-                                    <label htmlFor="roomBlock" className="text-gray-700 block mb-2">
-                                        Blok Kamar WBP *
-                                    </label>
-                                    <input
-                                        type="text"
-                                        id="roomBlock"
-                                        name="roomBlock"
-                                        value={formData.roomBlock}
-                                        readOnly
-                                        required
-                                        className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg cursor-not-allowed font-semibold text-blue-800"
-                                        placeholder="Otomatis terisi..."
-                                    />
+                                    <label htmlFor="roomBlock" className={labelCls}>Blok Kamar WBP *</label>
+                                    <input type="text" id="roomBlock" name="roomBlock" value={formData.roomBlock} readOnly required className={`${disabledInputCls} font-semibold text-blue-800`} placeholder="Otomatis terisi..." />
                                 </div>
                             </div>
                         </div>
 
-                        <div className="border-t border-border pt-6">
-                            <h3 className="text-gray-900 mb-4 flex items-center gap-2">
-                                <Calendar className="w-5 h-5 text-blue-600" />
-                                Jadwal Kunjungan (Pilih slot tersedia)
-                            </h3>
+                        {/* Section: Jadwal */}
+                        <div className="pt-2 border-t border-slate-200">
+                            <div className="flex items-center gap-2 mb-4 pb-2 border-b border-slate-200">
+                                <div className="w-7 h-7 bg-slate-100 border border-slate-200 rounded-lg flex items-center justify-center">
+                                    <Calendar className="w-3.5 h-3.5 text-slate-600" />
+                                </div>
+                                <h3 className="text-slate-800 font-black uppercase tracking-widest text-sm">Jadwal Registrasi Kunjungan</h3>
+                            </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
-                                    <label htmlFor="visitDate" className="text-gray-700 block mb-2">
-                                        Tanggal Kunjungan *
-                                    </label>
-                                    <select
-                                        id="visitDate"
-                                        name="visitDate"
-                                        value={formData.visitDate}
-                                        onChange={(e) => handleDateChange(e.target.value)}
-                                        required
-                                        className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    >
+                                    <label htmlFor="visitDate" className={labelCls}>Tanggal Kunjungan *</label>
+                                    <select id="visitDate" name="visitDate" value={formData.visitDate} onChange={(e) => handleDateChange(e.target.value)} required className={inputCls}>
                                         <option value="">Pilih tanggal</option>
                                         {availableDates.map((date: string) => (
                                             <option key={date} value={date}>
@@ -665,75 +402,55 @@ export default function RegistrationForm() {
                                     </select>
                                 </div>
                                 <div>
-                                    <label htmlFor="visitTime" className="text-gray-700 block mb-2">
-                                        Pilih Sesi Kunjungan *
-                                    </label>
-                                    <select
-                                        id="visitTime"
-                                        name="visitTime"
-                                        value={formData.visitTime}
-                                        onChange={handleChange}
-                                        required
-                                        disabled={!formData.visitDate || isLoadingSlots}
-                                        className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50"
-                                    >
+                                    <label htmlFor="visitTime" className={labelCls}>Pilih Sesi Kunjungan *</label>
+                                    <select id="visitTime" name="visitTime" value={formData.visitTime} onChange={handleChange} required disabled={!formData.visitDate || isLoadingSlots} className={`${inputCls} disabled:bg-slate-50 disabled:text-slate-400`}>
                                         <option value="">{isLoadingSlots ? 'Memuat jadwal...' : 'Pilih jadwal'}</option>
                                         {availableSlots.map(slot => {
                                             const label = slot.session_name
                                                 ? `${slot.session_name} (${slot.start_time.substring(0, 5)} - ${slot.end_time.substring(0, 5)})`
                                                 : `${slot.start_time.substring(0, 5)} - ${slot.end_time.substring(0, 5)}`;
-                                            return (
-                                                <option key={slot.id} value={label}>
-                                                    {label}
-                                                </option>
-                                            );
+                                            return <option key={slot.id} value={label}>{label}</option>;
                                         })}
-                                        {formData.visitDate && !isLoadingSlots && availableSlots.length === 0 && (
-                                            <option disabled>Penuh / Tidak tersedia</option>
-                                        )}
+                                        {formData.visitDate && !isLoadingSlots && availableSlots.length === 0 && <option disabled>Penuh / Tidak tersedia</option>}
                                     </select>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                            <div className="flex gap-2">
-                                <FileText className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                                <div>
-                                    <p className="text-blue-900">Catatan Penting:</p>
-                                    <ul className="text-sm text-blue-800 mt-2 space-y-1 list-disc list-inside">
-                                        <li>Harap datang 15 menit sebelum waktu kunjungan</li>
-                                        <li>Bawa dokumen asli untuk verifikasi</li>
-                                        <li>Patuhi tata tertib dan aturan kunjungan</li>
-                                    </ul>
-                                </div>
+                        {/* Info Note */}
+                        <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 flex gap-4 items-start">
+                            <div className="w-9 h-9 bg-slate-200 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <FileText className="w-4 h-4 text-slate-600" />
+                            </div>
+                            <div>
+                                <p className="text-xs font-black text-slate-700 uppercase tracking-widest mb-2">Kewajiban Pengunjung</p>
+                                <ul className="text-xs text-slate-500 space-y-1.5 font-medium leading-relaxed">
+                                    {[
+                                        'Hadir 15 menit sebelum waktu kunjungan untuk registrasi fisik.',
+                                        'Membawa KTP asli sebagai bukti identitas validator.',
+                                        'Mematuhi segala tata tertib, aturan pakaian, dan barang bawaan Lapas.',
+                                    ].map((t, i) => (
+                                        <li key={i} className="flex items-start gap-2"><div className="w-1.5 h-1.5 bg-slate-400 rounded-full mt-1.5 flex-shrink-0" />{t}</li>
+                                    ))}
+                                </ul>
                             </div>
                         </div>
 
-                        <button
-                            type="submit"
-                            disabled={isSubmitting}
-                            className={`w-full py-3 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2 ${isSubmitting
-                                ? 'bg-gray-400 cursor-not-allowed text-white'
-                                : 'bg-gradient-to-r from-blue-600 to-emerald-600 text-white hover:shadow-lg hover:scale-[1.02]'
-                                }`}
+                        {/* Submit Button */}
+                        <button type="submit" disabled={isSubmitting}
+                            className={`w-full py-4 rounded-xl font-black text-sm uppercase tracking-widest transition-all flex items-center justify-center gap-3 shadow-md ${isSubmitting
+                                ? 'bg-slate-200 cursor-not-allowed text-slate-400'
+                                : 'bg-blue-700 text-white hover:bg-blue-800 shadow-blue-200 hover:shadow-lg'}`}
                         >
                             {isSubmitting ? (
-                                <>
-                                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                                    Memproses Pendaftaran...
-                                </>
+                                <><div className="w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin" />Memproses Pendaftaran...</>
                             ) : (
-                                <>
-                                    <CheckCircle className="w-5 h-5" />
-                                    Daftar Kunjungan
-                                </>
+                                <><CheckCircle className="w-5 h-5" />Daftar Kunjungan</>
                             )}
                         </button>
                     </form>
-                )
-                }
-            </div >
+                )}
+            </div>
         </div>
     );
 }

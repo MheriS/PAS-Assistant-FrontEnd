@@ -216,14 +216,14 @@ export default function ChatAssistant() {
                         onChange={(e) => setInput(e.target.value)}
                         onKeyPress={handleKeyPress}
                         placeholder="Ketik pertanyaan Anda..."
-                        className="flex-1 px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-background"
+                        className="flex-1 min-w-0 px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-background"
                     />
                     <button
                         onClick={handleSend}
-                        className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+                        className="flex-shrink-0 px-3 sm:px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
                     >
                         <Send className="w-4 h-4" />
-                        Kirim
+                        <span className="hidden sm:inline">Kirim</span>
                     </button>
                 </div>
                 <div className="mt-2 flex flex-wrap gap-2">
