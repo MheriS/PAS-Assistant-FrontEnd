@@ -461,7 +461,7 @@ export default function App() {
           )}
 
           {/* Institutional Content Panel Wrapper */}
-          <div className={activeTab === 'beranda' ? 'hidden' : 'bg-white flex-1 rounded-sm shadow-sm border border-slate-200 p-5 md:p-8 relative'}>
+          <div className={activeTab === 'beranda' ? 'hidden' : `bg-white flex-1 rounded-sm shadow-sm border border-slate-200 ${activeTab === 'admin' ? 'p-4 md:p-5' : 'p-5 md:p-8'} relative`}>
             {/* Soft decorative background in the panel */}
             <div className="absolute inset-0 bg-white/60 pointer-events-none rounded-sm"></div>
 
