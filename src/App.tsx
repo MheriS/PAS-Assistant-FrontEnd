@@ -116,8 +116,9 @@ export default function App() {
             <div className="flex items-center justify-between h-24">
               {/* Logo & Title */}
               <div className="flex items-center gap-5">
-                <div className="flex items-center justify-center p-3.5 bg-blue-50 border border-blue-100 rounded-md shadow-sm cursor-pointer hover:bg-blue-100 transition" onClick={() => setActiveTab('dashboard')}>
-                  <Building2 className="w-8 h-8 text-blue-700" />
+                <div className="flex items-center justify-center cursor-pointer hover:opacity-90 transition-opacity gap-3" onClick={() => setActiveTab('dashboard')}>
+                  <img src="/logo-kemenkumham.png" alt="Logo Kemenkumham" className="h-12 w-auto object-contain drop-shadow-sm" />
+                  <img src="/logo-pemasyarakatan.png" alt="Logo Pemasyarakatan" className="h-12 w-auto object-contain drop-shadow-sm" />
                 </div>
                 <div className="flex flex-col border-l-2 border-slate-200 pl-5 py-1">
                   <h1 className="text-slate-900 text-2xl font-black tracking-tight uppercase leading-tight">Sistem Layanan PAS</h1>
@@ -561,10 +562,11 @@ export default function App() {
 
               <div className="space-y-4">
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-slate-900 border border-slate-700 flex items-center justify-center p-2">
-                    <Building2 className="w-full h-full text-blue-500" />
+                  <div className="flex items-center gap-2">
+                    <img src="/logo-kemenkumham.png" alt="Logo Kemenkumham" className="h-10 w-auto opacity-90" />
+                    <img src="/logo-pemasyarakatan.png" alt="Logo Pemasyarakatan" className="h-10 w-auto opacity-90" />
                   </div>
-                  <div>
+                  <div className="border-l-2 border-slate-800 pl-4 py-1">
                     <h3 className="text-slate-100 font-bold tracking-widest text-lg uppercase">PAS-Assistant</h3>
                     <p className="text-[10px] text-blue-500 font-bold uppercase tracking-widest mt-1">Humas Lapas Pamekasan</p>
                   </div>
