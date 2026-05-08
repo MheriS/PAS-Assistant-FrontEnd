@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Send, Bot, User } from 'lucide-react';
+import { Send, Bot, User, Trash2, MessageCircle } from 'lucide-react';
 
 interface Message {
     id: string;
@@ -9,6 +9,13 @@ interface Message {
 }
 
 import { API_BASE_URL } from '../config';
+
+const INITIAL_MESSAGE: Message = {
+    id: '1',
+    text: 'Selamat datang di PAS-Assistant! Saya siap membantu Anda dengan informasi seputar kunjungan ke Lapas Narkotika IIA Pamekasan. Ada yang bisa saya bantu?',
+    sender: 'assistant',
+    timestamp: new Date(),
+};
 
 export default function ChatAssistant() {
     const [messages, setMessages] = useState<Message[]>(() => {
@@ -24,14 +31,7 @@ export default function ChatAssistant() {
                 console.error('Error loading chat history:', e);
             }
         }
-        return [
-            {
-                id: '1',
-                text: 'Selamat datang di PAS-Assistant! Saya siap membantu Anda dengan informasi seputar kunjungan ke Lapas Narkotika IIA Pamekasan. Ada yang bisa saya bantu?',
-                sender: 'assistant',
-                timestamp: new Date(),
-            },
-        ];
+        return [INITIAL_MESSAGE];
     });
 
     useEffect(() => {
@@ -127,7 +127,7 @@ export default function ChatAssistant() {
 
     return (
         <div className="flex flex-col h-[600px] bg-white rounded-xl shadow-lg border border-border">
-            <div className="p-4 bg-gradient-to-r from-blue-600 to-blue-800 text-white rounded-t-xl">
+            <div className="p-4 bg-gradient-to-r from-blue-600 to-blue-800 text-white rounded-t-xl flex justify-between items-center">
                 <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
                         <Bot className="w-6 h-6" />
@@ -137,6 +137,18 @@ export default function ChatAssistant() {
                         <p className="text-blue-100 text-sm">AI Layanan Kunjungan</p>
                     </div>
                 </div>
+                <button
+                    onClick={() => {
+                        if (confirm('Apakah Anda yakin ingin menghapus semua riwayat percakapan?')) {
+                            setMessages([{ ...INITIAL_MESSAGE, timestamp: new Date() }]);
+                            localStorage.removeItem('pas_chat_messages');
+                        }
+                    }}
+                    className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+                    title="Hapus percakapan"
+                >
+                    <Trash2 className="w-5 h-5 text-white/80 hover:text-white" />
+                </button>
             </div>
 
             <div
@@ -226,7 +238,7 @@ export default function ChatAssistant() {
                         <span className="hidden sm:inline">Kirim</span>
                     </button>
                 </div>
-                <div className="mt-2 flex flex-wrap gap-2">
+                <div className="mt-2 flex flex-wrap gap-2 items-center">
                     {['Jadwal', 'Syarat', 'Barang', 'Kontak'].map((chip) => (
                         <button
                             key={chip}
@@ -236,6 +248,17 @@ export default function ChatAssistant() {
                             {chip}
                         </button>
                     ))}
+                    <div className="flex-1"></div>
+                    <a
+                        href="https://wa.me/6282143317094"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-3 py-1 text-sm bg-[#25D366]/10 text-[#128C7E] rounded-full hover:bg-[#25D366]/20 transition-colors flex items-center gap-1.5 font-bold border border-[#25D366]/30 shadow-sm"
+                        title="Chat Petugas via WhatsApp"
+                    >
+                        <MessageCircle className="w-4 h-4" />
+                        WhatsApp Petugas
+                    </a>
                 </div>
             </div>
         </div>
