@@ -4,8 +4,9 @@ import {
     CheckCircle, XCircle, Clock, Search, MapPin, User, FileText,
     Calendar, LayoutGrid, Users, Printer, Pill, DollarSign,
     ChevronLeft, ChevronRight, Filter, RefreshCw, AlertTriangle,
-    Shield, Layers
+    Shield, Layers, Download
 } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import AdminScheduleManager from './AdminScheduleManager';
 import AdminWBPManager from './AdminWBPManager';
 import DepositDashboard from './DepositDashboard';
@@ -41,6 +42,7 @@ export default function AdminDashboard() {
     const [selectedRegForMedicine, setSelectedRegForMedicine] = useState<string | null>(null);
     const [selectedRegForMoney, setSelectedRegForMoney] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [exportMonth, setExportMonth] = useState<string>('');
 
     const fetchData = async () => {
         setIsLoading(true);
@@ -227,6 +229,70 @@ export default function AdminDashboard() {
         }
     };
 
+    const handleExportExcel = () => {
+        let itemsToExport = registrations;
+
+        if (exportMonth) {
+            itemsToExport = itemsToExport.filter(reg => reg.visitDate.startsWith(exportMonth));
+        }
+
+        if (itemsToExport.length === 0) {
+            alert('Tidak ada data kunjungan pada bulan yang dipilih.');
+            return;
+        }
+
+        const dataToExport = itemsToExport.map((reg, index) => ({
+            'No': index + 1,
+            'ID Registrasi': reg.id,
+            'Tanggal Dibuat': new Date(reg.createdAt).toLocaleString('id-ID'),
+            'Status': reg.status === 'approved' ? 'Disetujui' : reg.status === 'rejected' ? 'Ditolak' : 'Tertunda',
+            'Nama Pengunjung': reg.visitorName,
+            'NIK': reg.nik,
+            'No. Telepon': reg.visitorPhone,
+            'Alamat': reg.visitorAddress,
+            'Nama WBP': reg.inmateName,
+            'Hubungan': reg.relationship,
+            'Tanggal Kunjungan': reg.visitDate,
+            'Waktu Kunjungan': reg.visitTime,
+            'Blok / Kamar': reg.roomBlock || '-',
+            'Total Pengikut': reg.jumlahPengikut || 0,
+            'Pengikut Laki-laki': reg.pengikutLaki || 0,
+            'Pengikut Perempuan': reg.pengikutPerempuan || 0,
+            'Pengikut Anak': reg.pengikutAnak || 0,
+            'Antrian': reg.queueNumber || '-'
+        }));
+
+        const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+
+        // Styling kolom Excel agar rapi (lebar disesuaikan)
+        worksheet['!cols'] = [
+            { wch: 5 },  // No
+            { wch: 20 }, // ID Registrasi
+            { wch: 20 }, // Tanggal Dibuat
+            { wch: 12 }, // Status
+            { wch: 28 }, // Nama Pengunjung
+            { wch: 20 }, // NIK
+            { wch: 15 }, // No. Telepon
+            { wch: 45 }, // Alamat
+            { wch: 28 }, // Nama WBP
+            { wch: 15 }, // Hubungan
+            { wch: 18 }, // Tanggal Kunjungan
+            { wch: 18 }, // Waktu Kunjungan
+            { wch: 15 }, // Blok / Kamar
+            { wch: 15 }, // Total Pengikut
+            { wch: 18 }, // Pengikut Laki-laki
+            { wch: 18 }, // Pengikut Perempuan
+            { wch: 15 }, // Pengikut Anak
+            { wch: 10 }, // Antrian
+        ];
+
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Laporan_Bulanan');
+
+        const fileName = exportMonth ? `Laporan_Kunjungan_${exportMonth}.xlsx` : `Laporan_Kunjungan_Keseluruhan.xlsx`;
+        XLSX.writeFile(workbook, fileName);
+    };
+
     const isViewMode = ['management', 'wbp', 'medicine'].includes(filter);
 
     return (
@@ -332,8 +398,34 @@ export default function AdminDashboard() {
 
                         {/* Results meta */}
                         <div className="flex items-center justify-between text-xs font-semibold text-slate-500 px-1">
-                            <span><span className="text-blue-700 font-black text-sm">{filteredRegistrations.length}</span> pendaftaran ditemukan</span>
-                            {totalPages > 1 && <span>Hal. <span className="text-slate-800 font-black">{currentPage}</span> / {totalPages}</span>}
+                            <div className="flex items-center gap-3">
+                                <span><span className="text-blue-700 font-black text-sm">{filteredRegistrations.length}</span> pendaftaran</span>
+                                {totalPages > 1 && <span>• Hal. <span className="text-slate-800 font-black">{currentPage}</span> / {totalPages}</span>}
+                            </div>
+                            <div className="flex items-center gap-2 bg-white p-1 rounded-lg border border-slate-200 shadow-sm">
+                                <div className="flex items-center gap-1.5 pl-2">
+                                    <span className="font-bold text-[10px] uppercase tracking-wider text-slate-400">Bulanan:</span>
+                                    <input
+                                        type="month"
+                                        value={exportMonth}
+                                        onChange={(e) => setExportMonth(e.target.value)}
+                                        className="text-xs font-bold text-slate-700 outline-none cursor-pointer bg-transparent border-none p-0 focus:ring-0"
+                                    />
+                                    {exportMonth && (
+                                        <button onClick={() => setExportMonth('')} className="text-red-400 hover:text-red-600 transition">
+                                            <XCircle className="w-3.5 h-3.5" />
+                                        </button>
+                                    )}
+                                </div>
+                                <div className="w-px h-5 bg-slate-200"></div>
+                                <button
+                                    onClick={handleExportExcel}
+                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 hover:text-emerald-700 border border-emerald-200 hover:border-emerald-300 rounded-md transition-all font-bold"
+                                    title="Export Laporan (Berdasarkan bulan jika dipilih)"
+                                >
+                                    <Download className="w-3.5 h-3.5" /> Export Laporan
+                                </button>
+                            </div>
                         </div>
 
                         {/* Cards */}

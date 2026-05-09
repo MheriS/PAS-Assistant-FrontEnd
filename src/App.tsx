@@ -17,7 +17,7 @@ export default function App() {
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(localStorage.getItem('is_admin_logged_in') === 'true');
   const [statusNik, setStatusNik] = useState('');
   const [visitorRegistrations, setVisitorRegistrations] = useState<RegistrationRecord[]>([]);
-  const [dynamicSchedule, setDynamicSchedule] = useState<{ day: string, time: string, color: string }[]>([]);
+  const [dynamicSchedule, setDynamicSchedule] = useState<{ day: string, time: string, type: 'Biasa' | 'Spesial', dateStr?: string }[]>([]);
 
   // Reset scroll to top when tab changes
   useEffect(() => {
@@ -32,31 +32,52 @@ export default function App() {
           getAllRecurringSlots()
         ]);
 
-        const dayMap: Record<string, { start: string, end: string }> = {};
+        const scheduleList: { day: string, time: string, type: 'Biasa' | 'Spesial', dateStr?: string }[] = [];
         const daysOrder = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
 
         recurring.filter(r => r.is_active).forEach(rule => {
           const dayName = daysOrder[rule.day_of_week];
-          if (!dayMap[dayName]) {
-            dayMap[dayName] = { start: rule.start_time, end: rule.end_time };
+          const timeStr = `${rule.start_time.substring(0, 5)}-${rule.end_time.substring(0, 5)}`;
+          const existing = scheduleList.find(s => s.day === dayName && s.type === 'Biasa');
+          if (existing) {
+            existing.time += ` & ${timeStr}`;
+          } else {
+            scheduleList.push({
+              day: dayName,
+              time: timeStr,
+              type: 'Biasa'
+            });
           }
         });
 
         const today = new Date().toISOString().split('T')[0];
         slots.filter(s => s.is_available && s.date >= today).forEach(slot => {
-          const date = new Date(slot.date);
-          const dayName = daysOrder[date.getDay()];
-          dayMap[dayName] = { start: slot.start_time, end: slot.end_time };
+          const dateObj = new Date(slot.date);
+          const dayName = daysOrder[dateObj.getDay()];
+          const dateFormatted = dateObj.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+          const timeStr = `${slot.start_time.substring(0, 5)}-${slot.end_time.substring(0, 5)}`;
+
+          const existing = scheduleList.find(s => s.dateStr === slot.date && s.type === 'Spesial');
+          if (existing) {
+            existing.time += ` & ${timeStr}`;
+          } else {
+            scheduleList.push({
+              day: `${dayName}, ${dateFormatted}`,
+              time: timeStr,
+              type: 'Spesial',
+              dateStr: slot.date
+            });
+          }
         });
 
-        const schedule = Object.entries(dayMap).map(([day, times]) => ({
-          day,
-          time: `${times.start.substring(0, 5)} - ${times.end.substring(0, 5)}`,
-          color: 'blue'
-        })).sort((a, b) => daysOrder.indexOf(a.day) - daysOrder.indexOf(b.day));
+        scheduleList.sort((a, b) => {
+          if (a.type === 'Biasa' && b.type === 'Biasa') return daysOrder.indexOf(a.day) - daysOrder.indexOf(b.day);
+          if (a.type === 'Spesial' && b.type === 'Spesial') return a.dateStr!.localeCompare(b.dateStr!);
+          return a.type === 'Biasa' ? -1 : 1;
+        });
 
-        if (schedule.length > 0) {
-          setDynamicSchedule(schedule);
+        if (scheduleList.length > 0) {
+          setDynamicSchedule(scheduleList);
         }
       } catch (error) {
         console.error('Error processing dynamic schedule:', error);
@@ -298,19 +319,19 @@ export default function App() {
                   <div className="flex-shrink-0 w-full md:w-72 grid grid-cols-2 gap-3">
                     {[
                       {
-                        label: 'Hari Layanan',
-                        value: dynamicSchedule.length > 0
-                          ? dynamicSchedule.map(s => s.day).join(', ')
+                        label: 'Hari Layanan (Biasa)',
+                        value: dynamicSchedule.filter(s => s.type === 'Biasa').length > 0
+                          ? dynamicSchedule.filter(s => s.type === 'Biasa').map(s => s.day).join(', ')
                           : '—',
-                        sub: 'Per Minggu',
+                        sub: 'Layanan Rutin Mingguan',
                         color: 'bg-white/10 border-white/20'
                       },
                       {
-                        label: 'Jam Kunjungan',
-                        value: dynamicSchedule.length > 0
-                          ? dynamicSchedule[0].time.replace('-', '–')
-                          : '—',
-                        sub: 'WIB',
+                        label: 'Jadwal Spesial',
+                        value: dynamicSchedule.filter(s => s.type === 'Spesial').length > 0
+                          ? dynamicSchedule.filter(s => s.type === 'Spesial').map(s => s.day.split(',')[0]).join(', ')
+                          : 'Tidak Ada',
+                        sub: 'Tanggal Tertentu Tertulis',
                         color: 'bg-white/10 border-white/20'
                       },
                       { label: 'Proses Pendaftaran', value: '100% Online', sub: 'Via Portal', color: 'bg-yellow-400/20 border-yellow-300/30' },
@@ -630,7 +651,10 @@ export default function App() {
                   {dynamicSchedule.length > 0 ? (
                     dynamicSchedule.map((item, index) => (
                       <div key={index} className={`flex justify-between items-center ${index !== dynamicSchedule.length - 1 ? 'border-b border-slate-800 pb-2 mb-2' : ''}`}>
-                        <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">{item.day}</span>
+                        <div className="flex flex-col">
+                          <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">{item.day}</span>
+                          <span className={`text-[9px] font-black uppercase mt-0.5 ${item.type === 'Spesial' ? 'text-amber-400' : 'text-slate-500'}`}>{item.type === 'Spesial' ? 'Spesial' : 'Biasa (Rutin)'}</span>
+                        </div>
                         <span className="text-xs font-bold text-slate-200 bg-slate-800 px-2 py-1 border border-slate-700">{item.time}</span>
                       </div>
                     ))

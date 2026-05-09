@@ -3,7 +3,7 @@ import { Clock, MapPin, Phone, Mail, CheckCircle, XCircle, ShieldAlert, Waves, B
 import { getAllVisitSlots, getAllRecurringSlots } from '../utils/registrationStorage';
 
 export default function InfoPanel() {
-    const [schedule, setSchedule] = useState<{ day: string; time: string }[]>([]);
+    const [schedule, setSchedule] = useState<{ day: string; time: string; type: 'Biasa' | 'Spesial', dateStr?: string }[]>([]);
 
     useEffect(() => {
         const fetchSchedule = async () => {
@@ -13,24 +13,50 @@ export default function InfoPanel() {
                     getAllRecurringSlots()
                 ]);
                 const daysOrder = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
-                const dayMap: Record<string, { start: string; end: string }> = {};
+                const scheduleList: { day: string, time: string, type: 'Biasa' | 'Spesial', dateStr?: string }[] = [];
 
                 recurring.filter((r: any) => r.is_active).forEach((rule: any) => {
                     const dayName = daysOrder[rule.day_of_week];
-                    if (!dayMap[dayName]) dayMap[dayName] = { start: rule.start_time, end: rule.end_time };
+                    const timeStr = `${rule.start_time.substring(0, 5)}-${rule.end_time.substring(0, 5)}`;
+                    const existing = scheduleList.find(s => s.day === dayName && s.type === 'Biasa');
+                    if (existing) {
+                        existing.time = existing.time.replace(' WIB', '') + ` & ${timeStr} WIB`;
+                    } else {
+                        scheduleList.push({
+                            day: dayName,
+                            time: `${timeStr} WIB`,
+                            type: 'Biasa'
+                        });
+                    }
                 });
 
                 const today = new Date().toISOString().split('T')[0];
                 slots.filter((s: any) => s.is_available && s.date >= today).forEach((slot: any) => {
-                    const dayName = daysOrder[new Date(slot.date).getDay()];
-                    dayMap[dayName] = { start: slot.start_time, end: slot.end_time };
+                    const dateObj = new Date(slot.date);
+                    const dayName = daysOrder[dateObj.getDay()];
+                    const dateFormatted = dateObj.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+                    const timeStr = `${slot.start_time.substring(0, 5)}-${slot.end_time.substring(0, 5)}`;
+
+                    const existing = scheduleList.find(s => s.dateStr === slot.date && s.type === 'Spesial');
+                    if (existing) {
+                        existing.time = existing.time.replace(' WIB', '') + ` & ${timeStr} WIB`;
+                    } else {
+                        scheduleList.push({
+                            day: `${dayName}, ${dateFormatted}`,
+                            time: `${timeStr} WIB`,
+                            type: 'Spesial',
+                            dateStr: slot.date
+                        });
+                    }
                 });
 
-                const result = Object.entries(dayMap)
-                    .map(([day, t]) => ({ day, time: `${t.start.substring(0, 5)} - ${t.end.substring(0, 5)} WIB` }))
-                    .sort((a, b) => daysOrder.indexOf(a.day) - daysOrder.indexOf(b.day));
+                scheduleList.sort((a, b) => {
+                    if (a.type === 'Biasa' && b.type === 'Biasa') return daysOrder.indexOf(a.day) - daysOrder.indexOf(b.day);
+                    if (a.type === 'Spesial' && b.type === 'Spesial') return a.dateStr!.localeCompare(b.dateStr!);
+                    return a.type === 'Biasa' ? -1 : 1;
+                });
 
-                if (result.length > 0) setSchedule(result);
+                if (scheduleList.length > 0) setSchedule(scheduleList);
             } catch (e) {
                 console.error('Error fetching schedule:', e);
             }
@@ -114,7 +140,10 @@ export default function InfoPanel() {
                             {schedule.length > 0 ? (
                                 schedule.map((s, i) => (
                                     <div key={i} className={`flex justify-between items-center ${i < schedule.length - 1 ? 'pb-3 border-b border-slate-100' : ''}`}>
-                                        <span className="font-bold text-slate-700 uppercase text-xs tracking-widest">{s.day}</span>
+                                        <div className="flex flex-col">
+                                            <span className="font-bold text-slate-700 uppercase text-xs tracking-widest">{s.day}</span>
+                                            <span className={`text-[9px] font-black uppercase mt-0.5 ${s.type === 'Spesial' ? 'text-amber-500' : 'text-slate-400'}`}>{s.type === 'Spesial' ? 'Spesial' : 'Biasa (Rutin)'}</span>
+                                        </div>
                                         <span className="font-black text-blue-800 bg-blue-50 border border-blue-200 px-3 py-1 rounded-lg text-xs">{s.time}</span>
                                     </div>
                                 ))
