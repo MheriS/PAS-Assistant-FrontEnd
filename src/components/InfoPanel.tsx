@@ -164,7 +164,10 @@ export default function InfoPanel() {
                         <div className="p-5">
                             <ul className="space-y-2.5">
                                 {[
-                                    { label: "Makanan kemasan (max 10kg)", detail: "Harus dalam segel pabrik" },
+                                    {
+                                        label: "Barang/Makanan Bawaan (dikemas dalam plastik ukuran 10 kg oleh petugas)",
+                                        detail: "Setiap makanan yang dibawa pengunjung akan diperiksa terlebih dahulu oleh petugas, kemudian dikemas dalam plastik maksimal 10 kg dan disegel"
+                                    },
                                     { label: "Uang tunai (max Rp 1.000.000)", detail: "Untuk penitipan di kantin/layanan" },
                                     { label: "Pakaian dalam (max 2 helai)", detail: "Harus baru/bersih" },
                                     { label: "Obat dengan resep dokter", detail: "Wajib lapor petugas medis" }
