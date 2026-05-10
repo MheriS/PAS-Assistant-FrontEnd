@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Send, Bot, User, Trash2, MessageCircle } from 'lucide-react';
+import { Send, Bot, User, Trash2, MessageCircle, Mic, MicOff, Volume2, VolumeX } from 'lucide-react';
 
 interface Message {
     id: string;
@@ -41,7 +41,119 @@ export default function ChatAssistant() {
     const [input, setInput] = useState('');
     const [isThinking, setIsThinking] = useState(false);
     const [isTyping, setIsTyping] = useState(false);
+    const [isListening, setIsListening] = useState(false);
+    const [isVoiceMuted, setIsVoiceMutedState] = useState(false);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
+    const transcriptRef = useRef('');
+    const isVoiceMutedRef = useRef(false);
+
+    const setIsVoiceMuted = (muted: boolean) => {
+        setIsVoiceMutedState(muted);
+        isVoiceMutedRef.current = muted;
+        if (muted && 'speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+        }
+    };
+
+    const speakText = (text: string) => {
+        if ('speechSynthesis' in window && !isVoiceMutedRef.current) {
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'id-ID';
+            utterance.pitch = 1;
+            utterance.rate = 1;
+            window.speechSynthesis.speak(utterance);
+        }
+    };
+
+    // Removed auto-send effect to allow manual control of user sending
+
+
+    const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+    const audioChunksRef = useRef<BlobPart[]>([]);
+
+    const startRecording = async () => {
+        try {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+            }
+
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            const options = MediaRecorder.isTypeSupported('audio/webm') ? { mimeType: 'audio/webm' } : undefined;
+            const mediaRecorder = new MediaRecorder(stream, options);
+            mediaRecorderRef.current = mediaRecorder;
+            audioChunksRef.current = [];
+
+            mediaRecorder.ondataavailable = (event) => {
+                if (event.data.size > 0) {
+                    audioChunksRef.current.push(event.data);
+                }
+            };
+
+            mediaRecorder.onstop = async () => {
+                const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+                audioChunksRef.current = [];
+                // Stop tracks to release mic immediately
+                stream.getTracks().forEach(track => track.stop());
+
+                await processAudioBlob(audioBlob);
+            };
+
+            mediaRecorder.start();
+            setIsListening(true);
+        } catch (error) {
+            console.error('Error accessing microphone:', error);
+            alert('Izin mikrofon ditolak atau mikrofon tidak ditemukan! Harap izinkan akses pada browser Anda.');
+            setIsListening(false);
+        }
+    };
+
+    const stopRecording = () => {
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+            setIsListening(false);
+            mediaRecorderRef.current.stop();
+        }
+    };
+
+    const processAudioBlob = async (blob: Blob) => {
+        setIsThinking(true);
+        setInput('');
+
+        const formData = new FormData();
+        formData.append('audio', blob, 'recording.webm');
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/chatbot/transcribe`, {
+                method: 'POST',
+                body: formData,
+            });
+
+            const data = await response.json();
+
+            if (data.text) {
+                // Must toggle off thinking so handleSend doesn't block!
+                setIsThinking(false);
+                setInput(data.text);
+                // Langsung lempar ke chatbot dengan me-bypass lock isThinking (karena state asinkron)
+                handleSend(data.text, true);
+            } else {
+                throw new Error("Teks kosong dari server.");
+            }
+        } catch (err) {
+            console.error('Transcription error:', err);
+            alert('Maaf, komunikasi dengan server Whisper terputus.');
+            setIsThinking(false);
+        }
+    };
+
+    // Fitur Push-to-Talk atau Tap-to-Talk Hybrid
+    const handleToggleRecording = () => {
+        if (isListening) {
+            stopRecording();
+        } else {
+            startRecording();
+        }
+    };
 
     const scrollToBottom = (behavior: 'auto' | 'smooth' = 'smooth') => {
         if (scrollContainerRef.current) {
@@ -63,45 +175,54 @@ export default function ChatAssistant() {
     }, [messages, isThinking, isTyping]);
 
 
-    const handleSend = async () => {
-        if (!input.trim() || isThinking || isTyping) return;
+    const handleSend = async (textOverride?: string | any, forceSend: boolean = false) => {
+        const actualTextOverride = typeof textOverride === 'string' ? textOverride : undefined;
+        const textToSend = actualTextOverride !== undefined ? actualTextOverride : input;
+
+        if (!textToSend.trim() || ((isThinking || isTyping) && !forceSend)) return;
+
+        if (isListening) {
+            stopRecording();
+        }
 
         const userMessage: Message = {
             id: Date.now().toString(),
-            text: input,
+            text: textToSend,
             sender: 'user',
             timestamp: new Date(),
         };
 
         setMessages((prev) => [...prev, userMessage]);
-        const currentInput = input;
         setInput('');
+        transcriptRef.current = '';
         setIsThinking(true);
 
         try {
             const response = await fetch(`${API_BASE_URL}/chatbot`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: currentInput }),
+                body: JSON.stringify({ message: textToSend }),
             });
 
             const data = await response.json();
+            const aiText = data.response || 'Maaf, saya sedang tidak dapat merespon.';
 
             setIsThinking(false);
             setIsTyping(true);
 
             // Simulate typing delay based on message length
-            const typingTime = Math.min(Math.max(data.response?.length * 20, 1000), 3000);
+            const typingTime = Math.min(Math.max(aiText.length * 20, 1000), 3000);
 
             setTimeout(() => {
                 const assistantMessage: Message = {
                     id: (Date.now() + 1).toString(),
-                    text: data.response || 'Maaf, saya sedang tidak dapat merespon.',
+                    text: aiText,
                     sender: 'assistant',
                     timestamp: new Date(),
                 };
                 setMessages((prev) => [...prev, assistantMessage]);
                 setIsTyping(false);
+                speakText(aiText);
             }, typingTime);
 
         } catch (error) {
@@ -115,6 +236,7 @@ export default function ChatAssistant() {
                 timestamp: new Date(),
             };
             setMessages((prev) => [...prev, errorMessage]);
+            speakText(errorMessage.text);
         }
     };
 
@@ -137,18 +259,27 @@ export default function ChatAssistant() {
                         <p className="text-blue-100 text-sm">AI Layanan Kunjungan</p>
                     </div>
                 </div>
-                <button
-                    onClick={() => {
-                        if (confirm('Apakah Anda yakin ingin menghapus semua riwayat percakapan?')) {
-                            setMessages([{ ...INITIAL_MESSAGE, timestamp: new Date() }]);
-                            localStorage.removeItem('pas_chat_messages');
-                        }
-                    }}
-                    className="p-2 hover:bg-white/20 rounded-lg transition-colors"
-                    title="Hapus percakapan"
-                >
-                    <Trash2 className="w-5 h-5 text-white/80 hover:text-white" />
-                </button>
+                <div className="flex gap-1">
+                    <button
+                        onClick={() => setIsVoiceMuted(!isVoiceMuted)}
+                        className={`p-2 rounded-lg transition-colors ${isVoiceMuted ? 'bg-red-500/20 hover:bg-red-500/40 text-red-100' : 'hover:bg-white/20 text-white/80 hover:text-white'}`}
+                        title={isVoiceMuted ? "Nyalakan Suara AI" : "Matikan Suara AI"}
+                    >
+                        {isVoiceMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+                    </button>
+                    <button
+                        onClick={() => {
+                            if (confirm('Apakah Anda yakin ingin menghapus semua riwayat percakapan?')) {
+                                setMessages([{ ...INITIAL_MESSAGE, timestamp: new Date() }]);
+                                localStorage.removeItem('pas_chat_messages');
+                            }
+                        }}
+                        className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+                        title="Hapus percakapan"
+                    >
+                        <Trash2 className="w-5 h-5 text-white/80 hover:text-white" />
+                    </button>
+                </div>
             </div>
 
             <div
@@ -222,12 +353,22 @@ export default function ChatAssistant() {
 
             <div className="p-4 border-t border-border">
                 <div className="flex gap-2">
+                    <button
+                        onClick={handleToggleRecording}
+                        className={`flex-shrink-0 p-2 sm:px-3 text-white rounded-lg transition-colors flex items-center justify-center ${isListening ? 'bg-red-500 hover:bg-red-600 animate-pulse' : 'bg-gray-500 hover:bg-gray-600'}`}
+                        title={isListening ? "Klik untuk menghentikan rekaman & kirim" : "Tap untuk bicara dengan Whisper AI"}
+                    >
+                        {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+                    </button>
                     <input
                         type="text"
                         value={input}
-                        onChange={(e) => setInput(e.target.value)}
+                        onChange={(e) => {
+                            setInput(e.target.value);
+                            transcriptRef.current = e.target.value; // Sync with typing
+                        }}
                         onKeyPress={handleKeyPress}
-                        placeholder="Ketik pertanyaan Anda..."
+                        placeholder={isListening ? "Sedang merekam suara Anda... Klik off jika selesai." : "Ketik pertanyaan Anda atau klik logo Mic..."}
                         className="flex-1 min-w-0 px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-background"
                     />
                     <button
