@@ -210,20 +210,16 @@ export default function ChatAssistant() {
             setIsThinking(false);
             setIsTyping(true);
 
-            // Simulate typing delay based on message length
-            const typingTime = Math.min(Math.max(aiText.length * 20, 1000), 3000);
-
-            setTimeout(() => {
-                const assistantMessage: Message = {
-                    id: (Date.now() + 1).toString(),
-                    text: aiText,
-                    sender: 'assistant',
-                    timestamp: new Date(),
-                };
-                setMessages((prev) => [...prev, assistantMessage]);
-                setIsTyping(false);
-                speakText(aiText);
-            }, typingTime);
+            // Remove artificial typing delay to get an immediate response
+            const assistantMessage: Message = {
+                id: (Date.now() + 1).toString(),
+                text: aiText,
+                sender: 'assistant',
+                timestamp: new Date(),
+            };
+            setMessages((prev) => [...prev, assistantMessage]);
+            setIsTyping(false);
+            speakText(aiText);
 
         } catch (error) {
             console.error('Error calling chatbot API:', error);
