@@ -404,7 +404,6 @@ export default function ChatAssistant() {
                         'Jadwal',
                         'Syarat',
                         'Barang',
-                        'Kontak',
                     ].map((chip) => (
                         <button
                             key={chip}

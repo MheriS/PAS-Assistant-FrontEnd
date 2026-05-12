@@ -670,7 +670,7 @@ export default function App() {
 
             <div className="pt-6 border-t border-slate-800 flex flex-col md:flex-row justify-between items-center gap-4">
               <p className="text-slate-600 text-xs font-bold tracking-widest uppercase text-center md:text-left">
-                &copy; 2026 KEMENTERIAN HUKUM DAN HAK ASASI MANUSIA<br className="md:hidden" /> REPUBLIK INDONESIA
+                &copy; 2026 KEMENTERIAN IMIGRASI DAN PEMASYARAKATAN REPUBLIK INDONESIA<br className="md:hidden" /> REPUBLIK INDONESIA
               </p>
               <div className="flex items-center gap-6">
                 <span className="text-[10px] font-bold text-slate-600 hover:text-slate-400 uppercase tracking-widest cursor-pointer transition-colors">Kebijakan Privasi</span>
