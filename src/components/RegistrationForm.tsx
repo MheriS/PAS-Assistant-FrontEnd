@@ -27,17 +27,50 @@ const labelCls = "block text-xs font-bold text-slate-600 uppercase tracking-wide
 const disabledInputCls = "w-full px-4 py-2.5 border border-slate-200 rounded-lg text-sm bg-slate-50 text-slate-500 cursor-not-allowed";
 
 export default function RegistrationForm() {
-    const [nikInput, setNikInput] = useState('');
-    const [nikChecked, setNikChecked] = useState(false);
-    const [isReturningVisitor, setIsReturningVisitor] = useState(false);
+    // Load saved state from localStorage on mount
+    const getInitialState = () => {
+        const savedData = localStorage.getItem('registration_form_data');
+        if (savedData) {
+            try {
+                const parsed = JSON.parse(savedData);
+                return {
+                    nikInput: parsed.nikInput || '',
+                    nikChecked: parsed.nikChecked || false,
+                    isReturningVisitor: parsed.isReturningVisitor || false,
+                    formData: {
+                        visitorName: '', visitorId: '', visitorPhone: '', visitorAddress: '',
+                        inmateName: '', relationship: '', visitDate: '', visitTime: '',
+                        roomBlock: '', pengikutLaki: 0, pengikutPerempuan: 0, pengikutAnak: 0,
+                        jumlahPengikut: 0, visitorGender: '',
+                        ...parsed.formData
+                    }
+                };
+            } catch (e) {
+                console.error('Failed to load saved form data:', e);
+            }
+        }
+        
+        return {
+            nikInput: '',
+            nikChecked: false,
+            isReturningVisitor: false,
+            formData: {
+                visitorName: '', visitorId: '', visitorPhone: '', visitorAddress: '',
+                inmateName: '', relationship: '', visitDate: '', visitTime: '',
+                roomBlock: '', pengikutLaki: 0, pengikutPerempuan: 0, pengikutAnak: 0,
+                jumlahPengikut: 0, visitorGender: '',
+            }
+        };
+    };
+
+    const initialState = getInitialState();
+    
+    const [nikInput, setNikInput] = useState(initialState.nikInput);
+    const [nikChecked, setNikChecked] = useState(initialState.nikChecked);
+    const [isReturningVisitor, setIsReturningVisitor] = useState(initialState.isReturningVisitor);
     const [isSearching, setIsSearching] = useState(false);
     const [regNumber, setRegNumber] = useState('');
-    const [formData, setFormData] = useState<FormData>({
-        visitorName: '', visitorId: '', visitorPhone: '', visitorAddress: '',
-        inmateName: '', relationship: '', visitDate: '', visitTime: '',
-        roomBlock: '', pengikutLaki: 0, pengikutPerempuan: 0, pengikutAnak: 0,
-        jumlahPengikut: 0, visitorGender: '',
-    });
+    const [formData, setFormData] = useState<FormData>(initialState.formData);
     const [wbpSuggestions, setWbpSuggestions] = useState<any[]>([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [submitted, setSubmitted] = useState(false);
@@ -46,6 +79,25 @@ export default function RegistrationForm() {
     const [availableSlots, setAvailableSlots] = useState<VisitSlot[]>([]);
     const [isLoadingSlots, setIsLoadingSlots] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // Save form data to localStorage whenever it changes
+    useEffect(() => {
+        if (nikChecked && !submitted) {
+            localStorage.setItem('registration_form_data', JSON.stringify({
+                nikInput,
+                nikChecked,
+                isReturningVisitor,
+                formData
+            }));
+        }
+    }, [nikInput, nikChecked, isReturningVisitor, formData, submitted]);
+
+    // Restore available dates and slots when date is restored
+    useEffect(() => {
+        if (formData.visitDate && nikChecked) {
+            handleDateChange(formData.visitDate);
+        }
+    }, []);
 
     useEffect(() => { fetchDates(); }, []);
 
@@ -120,6 +172,8 @@ export default function RegistrationForm() {
             setTimeout(() => {
                 setSubmitted(false); setNikChecked(false); setNikInput(''); setIsReturningVisitor(false);
                 setFormData({ visitorName: '', visitorId: '', visitorPhone: '', visitorAddress: '', inmateName: '', relationship: '', visitDate: '', visitTime: '', roomBlock: '', pengikutLaki: 0, pengikutPerempuan: 0, pengikutAnak: 0, jumlahPengikut: 0, visitorGender: '' });
+                // Clear saved form data after successful submission
+                localStorage.removeItem('registration_form_data');
             }, 5000);
         } catch {
             alert('Terjadi kesalahan saat menyimpan data');
@@ -130,6 +184,24 @@ export default function RegistrationForm() {
     const handleResetNik = () => {
         setNikChecked(false); setNikInput(''); setIsReturningVisitor(false); setSelectedWbpPhoto(null);
         setFormData({ visitorName: '', visitorId: '', visitorPhone: '', visitorAddress: '', inmateName: '', relationship: '', visitDate: '', visitTime: '', roomBlock: '', pengikutLaki: 0, pengikutPerempuan: 0, pengikutAnak: 0, jumlahPengikut: 0, visitorGender: '' });
+        // Clear saved form data
+        localStorage.removeItem('registration_form_data');
+    };
+
+    const handleBackToForm = () => {
+        // Check if there's saved data to restore
+        const savedData = localStorage.getItem('registration_form_data');
+        if (savedData) {
+            try {
+                const parsed = JSON.parse(savedData);
+                setNikInput(parsed.nikInput || '');
+                setNikChecked(parsed.nikChecked || false);
+                setIsReturningVisitor(parsed.isReturningVisitor || false);
+                setFormData(prev => ({ ...prev, ...parsed.formData }));
+            } catch (e) {
+                console.error('Failed to restore form data:', e);
+            }
+        }
     };
 
     // ── Success Screen ───────────────────────────────────────────────────────
@@ -160,15 +232,17 @@ export default function RegistrationForm() {
                 </div>
 
                 {/* Header */}
-                <div className="mb-8 pb-5 border-b border-slate-200 relative z-10 flex items-center gap-4">
-                    <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <FileText className="w-5 h-5 text-white" />
-                    </div>
-                    <div>
-                        <h2 className="text-lg font-black text-slate-900 tracking-tight uppercase">Formulir Pendaftaran Kunjungan</h2>
-                        <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
-                            {!nikChecked ? 'Masukkan NIK untuk memulai pendaftaran' : 'Lengkapi formulir data di bawah ini'}
-                        </p>
+                <div className="mb-8 pb-5 border-b border-slate-200 relative z-10 flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <FileText className="w-5 h-5 text-white" />
+                        </div>
+                        <div>
+                            <h2 className="text-lg font-black text-slate-900 tracking-tight uppercase">Formulir Pendaftaran Kunjungan</h2>
+                            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
+                                {!nikChecked ? 'Masukkan NIK untuk memulai pendaftaran' : 'Lengkapi formulir data di bawah ini'}
+                            </p>
+                        </div>
                     </div>
                 </div>
 
