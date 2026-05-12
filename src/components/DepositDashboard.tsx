@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Pill, CheckCircle, CheckCircle2, ChevronRight, AlertCircle, FileText, DollarSign, Wallet } from 'lucide-react';
+import Swal from 'sweetalert2';
 
 interface MedicineDelivery {
     id: number;
@@ -74,14 +75,30 @@ export default function DepositDashboard() {
             setRejectionReason('');
             setSelectedId(null);
             fetchData();
-        } catch (error) { alert('Gagal memperbarui status'); }
+        } catch (error) { 
+            Swal.fire({
+                icon: 'error',
+                title: 'Gagal Memperbarui',
+                text: 'Terjadi kesalahan saat memperbarui status',
+                confirmButtonColor: '#2563eb',
+                confirmButtonText: 'OK'
+            }); 
+        }
     };
 
     const handleMedicineDelivery = async (id: number) => {
         try {
             await fetch(`${API_BASE_URL}/medicine-deliveries/${id}/delivery`, { method: 'PATCH' });
             fetchData();
-        } catch (error) { alert('Gagal memperbarui status penyerahan'); }
+        } catch (error) { 
+            Swal.fire({
+                icon: 'error',
+                title: 'Gagal Memperbarui',
+                text: 'Terjadi kesalahan saat memperbarui status penyerahan',
+                confirmButtonColor: '#2563eb',
+                confirmButtonText: 'OK'
+            }); 
+        }
     };
 
     const handleMoneyDelivery = async (id: number) => {
@@ -92,7 +109,15 @@ export default function DepositDashboard() {
                 body: JSON.stringify({ status: 'delivered' })
             });
             fetchData();
-        } catch (error) { alert('Gagal memperbarui status penyerahan'); }
+        } catch (error) { 
+            Swal.fire({
+                icon: 'error',
+                title: 'Gagal Memperbarui',
+                text: 'Terjadi kesalahan saat memperbarui status penyerahan',
+                confirmButtonColor: '#2563eb',
+                confirmButtonText: 'OK'
+            }); 
+        }
     };
 
     return (

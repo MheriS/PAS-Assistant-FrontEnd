@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Calendar, User, IdCard, FileText, CheckCircle, Search, Scan, UserCheck, UserPlus, Building2 } from 'lucide-react';
+import Swal from 'sweetalert2';
 import { findVisitorByNIK, saveVisitor, type VisitorData } from '@/utils/visitorStorage';
 import { saveRegistration, getAvailableDates, getAvailableTimes, searchWBP, type VisitSlot } from '@/utils/registrationStorage';
 import MedicineRules from './MedicineRules';
@@ -119,7 +120,16 @@ export default function RegistrationForm() {
     };
 
     const handleNikSearch = async () => {
-        if (!nikInput || nikInput.length !== 16) { alert('Masukkan NIK dengan benar (16 digit)'); return; }
+        if (!nikInput || nikInput.length !== 16) { 
+            Swal.fire({
+                icon: 'error',
+                title: 'NIK Tidak Valid',
+                text: 'Masukkan NIK dengan benar (16 digit)',
+                confirmButtonColor: '#2563eb',
+                confirmButtonText: 'OK'
+            }); 
+            return; 
+        }
         setIsSearching(true);
         try {
             const existingVisitor = await findVisitorByNIK(nikInput);
@@ -131,7 +141,15 @@ export default function RegistrationForm() {
                 setIsReturningVisitor(false);
             }
             setNikChecked(true);
-        } catch { alert('Gagal mencari data pengunjung'); }
+        } catch { 
+            Swal.fire({
+                icon: 'error',
+                title: 'Gagal Mencari Data',
+                text: 'Terjadi kesalahan saat mencari data pengunjung',
+                confirmButtonColor: '#2563eb',
+                confirmButtonText: 'OK'
+            }); 
+        }
         finally { setIsSearching(false); }
     };
 
@@ -176,7 +194,13 @@ export default function RegistrationForm() {
                 localStorage.removeItem('registration_form_data');
             }, 5000);
         } catch {
-            alert('Terjadi kesalahan saat menyimpan data');
+            Swal.fire({
+                icon: 'error',
+                title: 'Pendaftaran Gagal',
+                text: 'Terjadi kesalahan saat menyimpan data pendaftaran',
+                confirmButtonColor: '#2563eb',
+                confirmButtonText: 'OK'
+            });
             setIsSubmitting(false);
         }
     };

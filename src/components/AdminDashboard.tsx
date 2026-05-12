@@ -6,6 +6,7 @@ import {
     ChevronLeft, ChevronRight, Filter, RefreshCw, AlertTriangle,
     Shield, Layers, Download
 } from 'lucide-react';
+import Swal from 'sweetalert2';
 import * as XLSX from 'xlsx';
 import AdminScheduleManager from './AdminScheduleManager';
 import AdminWBPManager from './AdminWBPManager';
@@ -173,7 +174,16 @@ export default function AdminDashboard() {
         try {
             const response = await fetch(url);
             const data = await response.json();
-            if (!data || data.length === 0) { alert(`Tidak ada data ${type} untuk pendaftaran ini`); return; }
+            if (!data || data.length === 0) { 
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Data Tidak Ditemukan',
+                    text: `Tidak ada data ${type} untuk pendaftaran ini`,
+                    confirmButtonColor: '#2563eb',
+                    confirmButtonText: 'OK'
+                }); 
+                return; 
+            }
             const wbpInfo = data[0].wbp || data[0].registration?.wbp;
             const blok = wbpInfo?.blok || '-';
             const kamar = wbpInfo?.kamar || '-';
@@ -183,7 +193,15 @@ export default function AdminDashboard() {
             printWindow.document.write(`<html><head><title>${title}</title><style>@page{size:58mm auto;margin:0;}html,body{margin:0;padding:0;width:58mm;height:auto;background-color:#fff;}body{font-family:'Courier New',Courier,monospace;padding:2mm 2mm 8mm 2mm;font-size:10px;line-height:1.1;color:#000;}.header{border-bottom:2px solid #000;padding-bottom:3px;margin-bottom:5px;text-align:center;}.title{font-weight:bold;font-size:11px;display:block;}.reg-id{font-size:7px;}.item{margin-bottom:3px;}.label{display:block;font-size:7px;text-transform:uppercase;}.value{font-weight:bold;font-size:10px;}.footer{margin-top:8px;border-top:1px dashed #000;padding-top:4px;font-size:7px;text-align:center;}.sig-box{display:flex;justify-content:space-between;margin-top:10px;}.sig{border-bottom:1px solid #000;width:45%;text-align:center;padding-bottom:15px;font-size:7px;}*{-webkit-print-color-adjust:exact;box-sizing:border-box;}</style></head><body><div class="header"><span class="title">PAS ASSISTANT</span><span class="title">${title}</span><span class="reg-id">ID: ${regId}</span></div><div class="item"><span class="label">Pengunjung:</span><span class="value">${data[0].registration?.visitor_name || 'N/A'}</span></div><div class="item"><span class="label">Tujuan WBP:</span><span class="value">${data[0].registration?.inmate_name || wbpInfo?.nama || 'N/A'}</span></div><div class="item"><span class="label">Blok/Kamar:</span><span class="value">${blok} / ${kamar}</span></div><div class="item" style="border:1px solid #000;padding:4px;margin-top:5px;"><span class="label">` + (type === 'medicine' ? 'Daftar Obat:' : 'Nominal Titipan:') + `</span><span class="value" style="font-size:13px;">` + (type === 'medicine' ? data.map((m: any) => m.medicine_name + ' (' + m.quantity + ')').join('<br/>') : 'Rp ' + new Intl.NumberFormat('id-ID').format(data[0].amount)) + `</span></div>` + (type === 'money' && data[0].notes ? `<div class="item"><span class="label">Catatan:</span><span class="value" style="font-size:10px;">` + data[0].notes + `</span></div>` : '') + `<div class="sig-box"><div class="sig">Petugas</div><div class="sig">Pengunjung</div></div><div class="footer">${new Date().toLocaleString('id-ID')}<br/>*** SEGEL TERPISAH ***</div></body></html>`);
             printWindow.document.close();
             setTimeout(() => { printWindow.print(); printWindow.close(); }, 500);
-        } catch { alert('Gagal mengambil data untuk dicetak'); }
+        } catch { 
+            Swal.fire({
+                icon: 'error',
+                title: 'Gagal Mencetak',
+                text: 'Terjadi kesalahan saat mengambil data untuk dicetak',
+                confirmButtonColor: '#2563eb',
+                confirmButtonText: 'OK'
+            }); 
+        }
     };
 
     const filteredRegistrations = registrations.filter(reg => {
@@ -237,7 +255,13 @@ export default function AdminDashboard() {
         }
 
         if (itemsToExport.length === 0) {
-            alert('Tidak ada data kunjungan pada bulan yang dipilih.');
+            Swal.fire({
+                icon: 'warning',
+                title: 'Tidak Ada Data',
+                text: 'Tidak ada data kunjungan pada bulan yang dipilih',
+                confirmButtonColor: '#2563eb',
+                confirmButtonText: 'OK'
+            });
             return;
         }
 
@@ -632,14 +656,34 @@ export default function AdminDashboard() {
                 <MedicineEntryModal
                     registrationId={selectedRegForMedicine}
                     onClose={() => { setShowMedicineModal(false); setSelectedRegForMedicine(null); }}
-                    onSuccess={() => { alert('Data obat berhasil ditambahkan!'); }}
+                    onSuccess={() => { 
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Berhasil!',
+                            text: 'Data obat berhasil ditambahkan!',
+                            timer: 2000,
+                            showConfirmButton: false,
+                            position: 'top-end',
+                            toast: true
+                        }); 
+                    }}
                 />
             )}
             {showMoneyModal && selectedRegForMoney && (
                 <MoneyEntryModal
                     registrationId={selectedRegForMoney}
                     onClose={() => { setShowMoneyModal(false); setSelectedRegForMoney(null); }}
-                    onSuccess={() => { alert('Data uang berhasil ditambahkan!'); }}
+                    onSuccess={() => { 
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Berhasil!',
+                            text: 'Data uang berhasil ditambahkan!',
+                            timer: 2000,
+                            showConfirmButton: false,
+                            position: 'top-end',
+                            toast: true
+                        }); 
+                    }}
                 />
             )}
         </div>

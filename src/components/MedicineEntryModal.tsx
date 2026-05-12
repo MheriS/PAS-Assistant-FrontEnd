@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Pill, X, Plus, Save, Trash2, AlertCircle } from 'lucide-react';
+import Swal from 'sweetalert2';
 
 interface MedicineEntryModalProps {
     registrationId: string;
@@ -39,7 +40,14 @@ export default function MedicineEntryModal({ registrationId, onClose, onSuccess 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!hasConsented) {
-            alert('Harap konfirmasi bahwa pengunjung sudah membaca aturan obat dilarang.');
+            Swal.fire({
+                icon: 'warning',
+                title: 'Konfirmasi Diperlukan',
+                text: 'Harap konfirmasi bahwa pengunjung sudah membaca aturan obat dilarang',
+                position: 'center',
+                confirmButtonColor: '#2563eb',
+                confirmButtonText: 'OK'
+            });
             return;
         }
 
@@ -68,7 +76,13 @@ export default function MedicineEntryModal({ registrationId, onClose, onSuccess 
             onSuccess();
             onClose();
         } catch (error: any) {
-            alert(`Gagal: ${error.message}`);
+            Swal.fire({
+                icon: 'error',
+                title: 'Gagal Menyimpan',
+                text: `Gagal: ${error.message}`,
+                confirmButtonColor: '#2563eb',
+                confirmButtonText: 'OK'
+            });
         } finally {
             setIsSubmitting(false);
         }

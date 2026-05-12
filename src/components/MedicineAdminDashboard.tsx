@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Pill, CheckCircle, CheckCircle2, ChevronRight, AlertCircle, FileText, PlusCircle } from 'lucide-react';
+import Swal from 'sweetalert2';
 
 interface MedicineDelivery {
     id: number;
@@ -67,7 +68,13 @@ export default function MedicineAdminDashboard() {
             setSelectedId(null);
             fetchDeliveries();
         } catch (error) {
-            alert('Gagal memperbarui status');
+            Swal.fire({
+                icon: 'error',
+                title: 'Gagal Memperbarui',
+                text: 'Terjadi kesalahan saat memperbarui status',
+                confirmButtonColor: '#2563eb',
+                confirmButtonText: 'OK'
+            });
         }
     };
 
@@ -78,7 +85,13 @@ export default function MedicineAdminDashboard() {
             });
             fetchDeliveries();
         } catch (error) {
-            alert('Gagal memperbarui status penyerahan');
+            Swal.fire({
+                icon: 'error',
+                title: 'Gagal Memperbarui',
+                text: 'Terjadi kesalahan saat memperbarui status penyerahan',
+                confirmButtonColor: '#2563eb',
+                confirmButtonText: 'OK'
+            });
         }
     };
 

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { DollarSign, X, Save, AlertCircle } from 'lucide-react';
+import Swal from 'sweetalert2';
 
 interface MoneyEntryModalProps {
     registrationId: string;
@@ -34,10 +35,22 @@ export default function MoneyEntryModal({ registrationId, onClose, onSuccess }: 
                 onSuccess();
                 onClose();
             } else {
-                alert('Gagal menyimpan data uang');
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Gagal Menyimpan',
+                    text: 'Gagal menyimpan data uang',
+                    confirmButtonColor: '#2563eb',
+                    confirmButtonText: 'OK'
+                });
             }
         } catch (error) {
-            alert('Terjadi kesalahan koneksi');
+            Swal.fire({
+                icon: 'error',
+                title: 'Koneksi Gagal',
+                text: 'Terjadi kesalahan koneksi',
+                confirmButtonColor: '#2563eb',
+                confirmButtonText: 'OK'
+            });
         } finally {
             setIsSubmitting(false);
         }

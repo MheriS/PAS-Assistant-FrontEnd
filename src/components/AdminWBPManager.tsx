@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { getAllWBP, recordMovement, createWBP, generateNoRegs, type WBPRecord } from '@/utils/WBPService';
 import { Search, Plus, UserPlus, LogIn, LogOut, LayoutGrid, Users, RefreshCw, Camera, X } from 'lucide-react';
+import Swal from 'sweetalert2';
 
 export default function AdminWBPManager() {
     const [wbps, setWbps] = useState<WBPRecord[]>([]);
@@ -70,7 +71,13 @@ export default function AdminWBPManager() {
             await recordMovement(id, type, new Date().toISOString(), keterangan);
             fetchData();
         } catch (error) {
-            alert('Gagal mencatat pergerakan');
+            Swal.fire({
+                icon: 'error',
+                title: 'Gagal Mencatat',
+                text: 'Terjadi kesalahan saat mencatat pergerakan',
+                confirmButtonColor: '#2563eb',
+                confirmButtonText: 'OK'
+            });
         }
     };
 
@@ -91,7 +98,13 @@ export default function AdminWBPManager() {
             });
             fetchData();
         } catch (error) {
-            alert('Gagal menambah WBP. Pastikan semua data benar.');
+            Swal.fire({
+                icon: 'error',
+                title: 'Gagal Menambah WBP',
+                text: 'Pastikan semua data benar',
+                confirmButtonColor: '#2563eb',
+                confirmButtonText: 'OK'
+            });
         } finally {
             setIsLoading(false);
         }
