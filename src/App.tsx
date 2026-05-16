@@ -8,6 +8,8 @@ import VisitSchedule from './components/VisitSchedule';
 import AdminLogin from './components/AdminLogin';
 import AdminDashboard from './components/AdminDashboard';
 import { getRegistrationsByNIK, getAllVisitSlots, getAllRecurringSlots, type RegistrationRecord } from './utils/registrationStorage';
+import keycloak, { initKeycloak } from './keycloak';
+import { API_BASE_URL } from './config';
 
 type Tab = 'beranda' | 'dashboard' | 'registration' | 'chat' | 'info' | 'admin' | 'status';
 
@@ -23,6 +25,104 @@ export default function App() {
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' });
   }, [activeTab]);
+
+  // Handle SSO callback: when Keycloak redirects back, 
+  // we initialize Keycloak to parse the auth code and exchange it for tokens.
+  useEffect(() => {
+    const isPending = localStorage.getItem('sso_login_pending') === 'true';
+    const href = window.location.href;
+    // const hasCode = href.includes('code=') && href.includes('state=');
+    const hasCode = href.includes('code=');
+    const isSSOCallback = href.includes('sso_callback=1');
+
+    console.warn('[SSO START] App mounted/rendered.');
+    console.warn('[SSO START] URL:', href);
+    console.warn('[SSO START] Flags -> pending:', isPending, '| hasCode:', hasCode, '| isSSOCallback:', isSSOCallback);
+
+    // Clean up any Keycloak error hash fragments (e.g. #error=login_required)
+    if (window.location.hash && window.location.hash.includes('error=')) {
+      console.error('[SSO ABOART] Keycloak returned an error in the hash:', window.location.hash);
+      // window.history.replaceState({}, '', window.location.pathname);
+      localStorage.removeItem('sso_login_pending');
+      return;
+    }
+
+    // Only process if we have pending login or there's an auth code in the URL
+    if (!isPending && !hasCode && !isSSOCallback) {
+      // Clean up stale pending flag if not a callback
+      localStorage.removeItem('sso_login_pending');
+      return;
+    }
+
+    console.warn('[SSO DEBUG] Continuing to process callback...');
+
+    // We reached the actual callback. Let's make sure sso_login_pending is removed
+    // immediately to prevent re-triggering logic on hot-reload or subsequent renders.
+    localStorage.removeItem('sso_login_pending');
+
+    // DO NOT clean URL here — keycloak-js needs the code, state, session_state
+    // params in the URL to complete the auth code exchange.
+
+    const processCallback = async () => {
+      console.log('[SSO DEBUG] Starting processCallback');
+      console.log('[SSO DEBUG] Current location.search:', window.location.search);
+      console.log('[SSO DEBUG] Current location.hash:', window.location.hash);
+      try {
+        console.log('[SSO DEBUG] Calling initKeycloak()');
+        const authenticated = await initKeycloak({
+          onLoad: 'check-sso',
+          checkLoginIframe: false,
+        });
+
+        console.log('[SSO DEBUG] initKeycloak returned authenticated:', authenticated);
+        console.log('[SSO DEBUG] keycloak.token exists?', !!keycloak.token);
+
+        // NOW clean the URL after keycloak-js has read the auth params
+        window.history.replaceState({}, '', window.location.pathname);
+
+        if (authenticated && keycloak.token) {
+          console.log('[SSO DEBUG] Sending token to backend /login-sso');
+          // Exchange Keycloak token for local Sanctum token
+          const response = await fetch(`${API_BASE_URL}/login-sso`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token: keycloak.token }),
+          });
+
+          console.log('[SSO DEBUG] Backend response status:', response.status);
+          const data = await response.json();
+          console.log('[SSO DEBUG] Backend response data:', data);
+
+          if (response.ok && data.status === 'success') {
+            console.log('[SSO DEBUG] SSO Exchange SUCCESS. Logging in admin.');
+            localStorage.setItem('is_admin_logged_in', 'true');
+            localStorage.setItem('kc_token', keycloak.token);
+            localStorage.removeItem('sso_login_pending');
+            if (data.token) {
+              localStorage.setItem('auth_token', data.token);
+            }
+            if (data.user) {
+              localStorage.setItem('auth_user', JSON.stringify(data.user));
+            }
+            setIsAdminLoggedIn(true);
+            setActiveTab('admin');
+          } else {
+            console.error('[SSO DEBUG] SSO token exchange failed:', data.message);
+            localStorage.removeItem('sso_login_pending');
+          }
+        } else {
+          console.warn('[SSO DEBUG] SSO callback: not authenticated after init()');
+          localStorage.removeItem('sso_login_pending');
+        }
+      } catch (err) {
+        console.error('[SSO DEBUG] SSO callback processing error:', err);
+        localStorage.removeItem('sso_login_pending');
+        window.history.replaceState({}, '', window.location.pathname);
+      }
+    };
+
+    processCallback();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const fetchDynamicSchedule = async () => {
@@ -93,6 +193,10 @@ export default function App() {
 
   const handleAdminLogout = () => {
     localStorage.removeItem('is_admin_logged_in');
+    localStorage.removeItem('kc_token');
+    localStorage.removeItem('sso_login_pending');
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('auth_user');
     setIsAdminLoggedIn(false);
     setActiveTab('dashboard');
   };
